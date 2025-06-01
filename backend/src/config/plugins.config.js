@@ -13,7 +13,11 @@ export const jwtConfig = {
 };
 
 export const postgresConfig = {
-  connectionString: `postgres://${process.env.PG_USER}:${process.env.PG_PASSWORD}@${process.env.PG_HOST}:${process.env.PG_PORT}/${process.env.PG_DATABASE}`,
+  host: process.env.PG_HOST || 'localhost',
+  port: parseInt(process.env.PG_PORT || '5432'),
+  user: process.env.PG_USER || 'dev',
+  password: process.env.PG_PASSWORD || 'password',
+  database: process.env.PG_DATABASE || 'myappdb',
   ssl: process.env.NODE_ENV === 'production'
 };
 

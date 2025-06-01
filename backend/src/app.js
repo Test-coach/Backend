@@ -7,6 +7,8 @@ import cors from '@fastify/cors';
 import helmet from 'helmet';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRoutes from './auth/routes/auth.route.js';
 import { connectMongo } from './db/mongo.js';
 
@@ -14,7 +16,12 @@ import { fastifyConfig } from './config/fastify.config.js';
 import { corsConfig, jwtConfig, postgresConfig, redisConfig } from './config/plugins.config.js';
 import { serverConfig } from './config/server.config.js';
 
-dotenv.config();
+// Get the directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from the correct path
+dotenv.config({ path: path.join(__dirname, '../../config/env/development.env') });
 
 const server = Fastify(fastifyConfig);
 
@@ -27,7 +34,7 @@ const initialize = async () => {
     // Add request logging
     server.addHook('onRequest', (request, reply, done) => {
       const start = Date.now();
-      request.on('end', () => {
+      reply.raw.on('finish', () => {
         const duration = Date.now() - start;
         server.log.info({
           method: request.method,
@@ -57,7 +64,11 @@ const initialize = async () => {
     });
 
     // Bcrypt
-    server.decorate('bcrypt', bcrypt);
+    const saltRounds = parseInt(process.env.SALT_ROUNDS || '12');
+    server.decorate('bcrypt', {
+      hash: (password) => bcrypt.hash(password, saltRounds),
+      compare: (password, hash) => bcrypt.compare(password, hash)
+    });
 
     // PostgreSQL
     await server.register(postgres, postgresConfig);
