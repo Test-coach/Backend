@@ -1,0 +1,43 @@
+{
+  "name": "fastifyhub",
+  "version": "1.0.0",
+  "description": "A modern, secure, and scalable web application built with Fastify, featuring authentication, WebSocket support, PostgreSQL database, and Redis caching",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon --watch src src/app.js",
+    "test:db": "psql -U dev -d myappdb -c 'SELECT NOW()'",
+    "test:redis": "redis-cli ping"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "@fastify/jwt": "^9.1.0",
+    "@fastify/oauth2": "^8.1.2",
+    "@fastify/postgres": "^6.0.2",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/redis": "^7.0.2",
+    "@fastify/websocket": "^11.1.0",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^16.5.0",
+    "fastify": "^5.3.3",
+    "helmet": "^8.1.0",
+    "ioredis": "^5.6.1",
+    "joi": "^17.13.3",
+    "mongodb": "^6.16.0",
+    "nodemailer": "^7.0.3",
+    "pg": "^8.16.0",
+    "pino-pretty": "^13.0.0",
+    "qrcode": "^1.5.4",
+    "redis": "^5.1.1",
+    "speakeasy": "^2.0.0",
+    "zod": "^3.25.45"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.1.1",
+    "typescript": "^5.8.3"
+  }
+}
