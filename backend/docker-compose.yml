@@ -1,9 +1,43 @@
 version: '3.8'
 
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: typing-master-app
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: myappdb
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MONGO_URI: mongodb://root:mongopass@mongodb:27017
+      MONGO_DB: typing_analytics
+      JWT_SECRET: your-super-secret-key
+      NODE_OPTIONS: --inspect=0.0.0.0:9229
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Debug port
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run dev
+
   postgres:
     image: postgres:15
-    container_name: wsl-postgres
+    container_name: typing-master-postgres
     environment:
       POSTGRES_USER: dev
       POSTGRES_PASSWORD: password
@@ -12,7 +46,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./src/auth/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./create-table.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dev -d myappdb"]
       interval: 5s
@@ -21,7 +55,7 @@ services:
 
   redis:
     image: redis:7.2
-    container_name: wsl-redis
+    container_name: typing-master-redis
     ports:
       - "6379:6379"
     volumes:
@@ -35,7 +69,7 @@ services:
 
   mongodb:
     image: mongo:6.0
-    container_name: wsl-mongodb
+    container_name: typing-master-mongodb
     ports:
       - "27017:27017"
     volumes:
