@@ -14,12 +14,12 @@ import authRoutes from './auth/routes/auth.route.js';
 import { authenticateJWT } from './middleware/auth.middleware.js';
 import { requestLogger } from './middleware/logger.middleware.js';
 import { errorHandler } from './middleware/error.middleware.js';
+import { postgresConfig, redisConfig } from './config/database.config.js';
+import { serverConfig, rateLimitConfig } from './config/server.config.js';
 
-// Get the directory name
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables
 dotenv.config({ path: path.join(__dirname, '../../config/env/development.env') });
 
 // Initialize Express app
@@ -30,19 +30,10 @@ const httpServer = createServer(app);
 const wss = new WebSocketServer({ server: httpServer });
 
 // Initialize PostgreSQL pool
-const pgPool = new Pool({
-  user: process.env.POSTGRES_USER,
-  host: process.env.POSTGRES_HOST,
-  database: process.env.POSTGRES_DB,
-  password: process.env.POSTGRES_PASSWORD,
-  port: process.env.POSTGRES_PORT,
-});
+const pgPool = new Pool(postgresConfig);
 
 // Initialize Redis client
-const redis = new Redis({
-  host: process.env.REDIS_HOST,
-  port: process.env.REDIS_PORT
-});
+const redis = new Redis(redisConfig);
 
 // Middleware
 app.use(helmet());
@@ -51,10 +42,7 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100
-});
+const limiter = rateLimit(rateLimitConfig);
 app.use(limiter);
 
 app.use(requestLogger);
@@ -64,7 +52,8 @@ app.get('/health', (req, res) => {
     status: 'OK',
     db: 'PostgreSQL',
     cache: 'Redis',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: serverConfig.env
   });
 });
 
@@ -119,8 +108,7 @@ const gracefulShutdown = async () => {
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
-const PORT = process.env.PORT || 3000;
-httpServer.listen(PORT, () => {
-  console.log(`Server ready on port ${PORT}`);
-  console.log(`WebSocket endpoint: ws://localhost:${PORT}`);
+httpServer.listen(serverConfig.port, () => {
+  console.log(`Server ready on port ${serverConfig.port} in ${serverConfig.env} mode`);
+  console.log(`WebSocket endpoint: ws://localhost:${serverConfig.port}`);
 });
