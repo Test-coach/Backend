@@ -1,38 +1,116 @@
+import { JwtService } from '../services/jwt.service.js';
+import { Pool } from 'pg';
 import { AuthError } from '../utils/errors.js';
 
-export default class AuthController {
-  constructor(authService) {
-    this.authService = authService;
-  }
+const pgPool = new Pool();
+const jwtService = new JwtService();
 
-  async register(request, reply) {
+export class AuthController {
+  async register(req, res) {
     try {
-      const { username, password, email } = request.body;
-      const user = await this.authService.register({ username, password, email });
-      return reply.code(201).send({
-        message: 'User registered successfully',
-        user
-      });
-    } catch (error) {
-      if (error instanceof AuthError) {
-        return reply.code(error.statusCode).send({ error: error.message });
+      const { email, password, username } = req.body;
+      
+      // Check if user exists
+      const existingUser = await jwtService.findUserByEmail(email);
+      if (existingUser) {
+        throw new AuthError('User already exists', 400);
       }
-      request.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+
+      // Hash password
+      const hashedPassword = await jwtService.hashPassword(password);
+
+      // Create user
+      const client = await pgPool.connect();
+      try {
+        const { rows: newUser } = await client.query(
+          'INSERT INTO users (email, password, username) VALUES ($1, $2, $3) RETURNING id, email, username',
+          [email, hashedPassword, username]
+        );
+
+        // Generate token
+        const token = await jwtService.generateToken(newUser[0].id);
+
+        res.status(201).json({
+          message: 'User registered successfully',
+          user: {
+            id: newUser[0].id,
+            email: newUser[0].email,
+            username: newUser[0].username
+          },
+          token
+        });
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return res.status(err.statusCode).json({ error: err.message });
+      }
+      console.error(err);
+      res.status(500).json({ error: 'Registration failed' });
     }
   }
 
-  async login(request, reply) {
+  async login(req, res) {
     try {
-      const { username, password } = request.body;
-      const result = await this.authService.login(username, password);
-      return reply.code(200).send(result);
-    } catch (error) {
-      if (error instanceof AuthError) {
-        return reply.code(error.statusCode).send({ error: error.message });
+      const { email, password } = req.body;
+
+      // Find user
+      const user = await jwtService.findUserByEmail(email);
+      if (!user) {
+        throw new AuthError('Invalid credentials', 401);
       }
-      request.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+
+      // Verify password
+      const validPassword = await jwtService.comparePassword(password, user.password);
+      if (!validPassword) {
+        throw new AuthError('Invalid credentials', 401);
+      }
+
+      // Generate token
+      const token = await jwtService.generateToken(user.id);
+
+      res.json({
+        message: 'Login successful',
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username
+        },
+        token
+      });
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return res.status(err.statusCode).json({ error: err.message });
+      }
+      console.error(err);
+      res.status(500).json({ error: 'Login failed' });
+    }
+  }
+
+  async getCurrentUser(req, res) {
+    try {
+      const token = req.headers.authorization?.split(' ')[1];
+      if (!token) {
+        throw new AuthError('No token provided', 401);
+      }
+
+      const decoded = await jwtService.verifyToken(token);
+      const user = await jwtService.findUserById(decoded.id);
+
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username
+        }
+      });
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return res.status(err.statusCode).json({ error: err.message });
+      }
+      console.error(err);
+      res.status(500).json({ error: 'Failed to get user data' });
     }
   }
 } 

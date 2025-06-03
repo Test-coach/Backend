@@ -1,7 +1,15 @@
-import postgres from '@fastify/postgres';
+import { Pool } from 'pg';
+import { postgresConfig } from '../config/database.config.js';
 
-export const pgPlugin = async (fastify) => {
-  fastify.register(postgres, {
-    connectionString: `postgres://${process.env.PG_USER}:${process.env.PG_PASSWORD}@${process.env.PG_HOST}:${process.env.PG_PORT}/${process.env.PG_DATABASE}`
-  });
+const pgPool = new Pool(postgresConfig);
+
+export const getPgPool = () => pgPool;
+
+export const query = async (text, params) => {
+  const client = await pgPool.connect();
+  try {
+    return await client.query(text, params);
+  } finally {
+    client.release();
+  }
 };
