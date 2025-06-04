@@ -1,4 +1,4 @@
-export default class UserRepository {
+class UserRepository {
   constructor(fastify) {
     this.fastify = fastify;
   }
@@ -41,4 +41,6 @@ export default class UserRepository {
       client.release();
     }
   }
-} 
+}
+
+module.exports = UserRepository; 

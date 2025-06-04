@@ -1,13 +1,17 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import { Pool } from 'pg';
-import { postgresConfig } from '../../config/database.config.js';
-import { jwtConfig, passwordConfig } from '../../config/auth.config.js';
-import { AuthError } from '../utils/errors.js';
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const { Pool } = require('pg');
+const { postgresConfig } = require('../../config/database.config');
+const { jwtConfig, passwordConfig } = require('../../config/auth.config');
+const { AuthError } = require('../utils/errors');
+
+if (!postgresConfig.connectionString) {
+  throw new Error('DATABASE_URL environment variable is not set');
+}
 
 const pgPool = new Pool(postgresConfig);
 
-export class JwtService {
+class JwtService {
   constructor() {
     this.secret = jwtConfig.secret;
     this.saltRounds = passwordConfig.saltRounds;
@@ -57,58 +61,4 @@ export class JwtService {
   }
 }
 
-export default class AuthService {
-  constructor(fastify, userRepository) {
-    this.fastify = fastify;
-    this.userRepository = userRepository;
-  }
-
-  async register({ username, password, email }) {
-    // Check if user exists
-    const existingUsers = await this.userRepository.findByUsernameOrEmail(username, email);
-    if (existingUsers.length > 0) {
-      throw new AuthError('User already exists', 400);
-    }
-
-    const hashedPassword = await this.fastify.bcrypt.hash(password);
-
-    // Create user
-    const user = await this.userRepository.createUser({
-      username,
-      password: hashedPassword,
-      email
-    });
-
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email
-    };
-  }
-
-  async login(username, password) {
-    const user = await this.userRepository.findByUsername(username);
-    if (!user) {
-      throw new AuthError('Invalid credentials', 401);
-    }
-
-    const validPassword = await this.fastify.bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      throw new AuthError('Invalid credentials', 401);
-    }
-
-    const token = this.fastify.jwt.sign({ 
-      id: user.id,
-      username: user.username 
-    });
-
-    return {
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email
-      }
-    };
-  }
-} 
+module.exports = { JwtService }; 

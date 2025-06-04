@@ -1,38 +1,25 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import { createServer } from 'http';
-import { WebSocketServer } from 'ws';
-import { Pool } from 'pg';
-import Redis from 'ioredis';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import rateLimit from 'express-rate-limit';
-import authRoutes from './auth/routes/auth.route.js';
-import { authenticateJWT } from './middleware/auth.middleware.js';
-import { requestLogger } from './middleware/logger.middleware.js';
-import { errorHandler } from './middleware/error.middleware.js';
-import { postgresConfig, redisConfig } from './config/database.config.js';
-import { serverConfig, rateLimitConfig } from './config/server.config.js';
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const { createServer } = require('http');
+const { WebSocketServer } = require('ws');
+const { Pool } = require('pg');
+const Redis = require('ioredis');
+const dotenv = require('dotenv');
+const path = require('path');
+const rateLimit = require('express-rate-limit');
+const authRoutes = require('./auth/routes/auth.route');
+const { authenticateJWT } = require('./middleware/auth.middleware');
+const { requestLogger } = require('./middleware/logger.middleware');
+const { errorHandler } = require('./middleware/error.middleware');
+const { postgresConfig, redisConfig } = require('./config/database.config');
+const { serverConfig, rateLimitConfig } = require('./config/server.config');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-dotenv.config({ path: path.join(__dirname, '../../config/env/development.env') });
-
-// Initialize Express app
 const app = express();
 const httpServer = createServer(app);
 
-// Initialize WebSocket server
 const wss = new WebSocketServer({ server: httpServer });
-
-// Initialize PostgreSQL pool
-const pgPool = new Pool(postgresConfig);
-
-// Initialize Redis client
 const redis = new Redis(redisConfig);
 
 // Middleware
