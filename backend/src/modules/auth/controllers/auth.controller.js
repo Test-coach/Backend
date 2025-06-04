@@ -1,7 +1,7 @@
 const { JwtService } = require('../services/jwt.service');
 const { Pool } = require('pg');
 const { AuthError } = require('../utils/errors');
-const { postgresConfig } = require('../../config/database.config');
+const { postgresConfig } = require('../../../config/database.config');
 
 if (!postgresConfig.connectionString) {
   throw new Error('DATABASE_URL environment variable is not set');
