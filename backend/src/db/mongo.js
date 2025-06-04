@@ -1,5 +1,5 @@
-import { MongoClient } from 'mongodb';
-import { serverConfig } from '../config/server.config.js';
+const { MongoClient } = require('mongodb');
+const { serverConfig } = require('../config/server.config');
 
 const mongoConfig = {
   uri: process.env.MONGO_URI || 'mongodb://localhost:27017',
@@ -9,7 +9,8 @@ const mongoConfig = {
 const client = new MongoClient(mongoConfig.uri);
 
 let db;
-export const connectMongo = async () => {
+
+const connectMongo = async () => {
   try {
     await client.connect();
     db = client.db(mongoConfig.dbName);
@@ -21,13 +22,19 @@ export const connectMongo = async () => {
   }
 };
 
-export const getMongoCollection = (name) => db.collection(name);
+const getMongoCollection = (name) => db.collection(name);
 
-export const closeMongoConnection = async () => {
+const closeMongoConnection = async () => {
   try {
     await client.close();
     console.log('MongoDB connection closed');
   } catch (err) {
     console.error('Error closing MongoDB connection', err);
   }
+};
+
+module.exports = {
+  connectMongo,
+  getMongoCollection,
+  closeMongoConnection
 };

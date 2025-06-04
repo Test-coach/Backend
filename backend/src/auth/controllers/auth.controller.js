@@ -1,11 +1,16 @@
-import { JwtService } from '../services/jwt.service.js';
-import { Pool } from 'pg';
-import { AuthError } from '../utils/errors.js';
+const { JwtService } = require('../services/jwt.service');
+const { Pool } = require('pg');
+const { AuthError } = require('../utils/errors');
+const { postgresConfig } = require('../../config/database.config');
 
-const pgPool = new Pool();
+if (!postgresConfig.connectionString) {
+  throw new Error('DATABASE_URL environment variable is not set');
+}
+
+const pgPool = new Pool(postgresConfig);
 const jwtService = new JwtService();
 
-export class AuthController {
+class AuthController {
   async register(req, res) {
     try {
       const { email, password, username } = req.body;
@@ -113,4 +118,6 @@ export class AuthController {
       res.status(500).json({ error: 'Failed to get user data' });
     }
   }
-} 
+}
+
+module.exports = { AuthController }; 

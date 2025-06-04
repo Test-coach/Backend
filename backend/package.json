@@ -3,10 +3,9 @@
   "version": "1.0.0",
   "description": "A modern, secure, and scalable web application built with Express, featuring authentication, WebSocket support, PostgreSQL database, and Redis caching",
   "main": "src/app.js",
-  "type": "module",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "nodemon --watch src src/app.js",
+    "dev": "node --watch src/app.js",
     "test:db": "psql -U dev -d myappdb -c 'SELECT NOW()'",
     "test:redis": "redis-cli ping"
   },

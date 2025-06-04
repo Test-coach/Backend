@@ -1,39 +1,42 @@
-import { getMongoCollection } from '../db/mongo.js';
-import { serverConfig } from '../config/server.config.js';
+const { getMongoCollection } = require('../db/mongo');
+const { serverConfig } = require('../config/server.config');
 
-export const logKeystroke = async (sessionId, data) => {
+const logKeystroke = async (sessionId, data) => {
   try {
-    const collection = getMongoCollection('keystrokes');
-    const result = await collection.insertOne({
+    const keystrokes = getMongoCollection('keystrokes');
+    await keystrokes.insertOne({
       sessionId,
-      timestamp: new Date(),
-      environment: serverConfig.env,
-      ...data
+      ...data,
+      timestamp: new Date()
     });
 
     if (serverConfig.env !== 'production') {
       console.log(`Keystroke logged for session ${sessionId}:`, {
-        id: result.insertedId,
-        timestamp: new Date()
+        key: data.key,
+        speed: data.speed,
+        isError: data.isError
       });
     }
-
-    return result;
-  } catch (error) {
-    console.error('Error logging keystroke:', error);
-    throw error;
+  } catch (err) {
+    console.error('Error logging keystroke:', err);
+    throw err;
   }
 };
 
-export const getSessionKeystrokes = async (sessionId) => {
+const getSessionKeystrokes = async (sessionId) => {
   try {
-    const collection = getMongoCollection('keystrokes');
-    return await collection
+    const keystrokes = getMongoCollection('keystrokes');
+    return await keystrokes
       .find({ sessionId })
       .sort({ timestamp: 1 })
       .toArray();
-  } catch (error) {
-    console.error(`Error fetching keystrokes for session ${sessionId}:`, error);
-    throw error;
+  } catch (err) {
+    console.error('Error fetching session keystrokes:', err);
+    throw err;
   }
+};
+
+module.exports = {
+  logKeystroke,
+  getSessionKeystrokes
 };
