@@ -7,7 +7,8 @@
     "start": "node src/app.js",
     "dev": "node --watch src/app.js",
     "test:db": "psql -U dev -d myappdb -c 'SELECT NOW()'",
-    "test:redis": "redis-cli ping"
+    "test:redis": "redis-cli ping",
+    "seed": "node src/db/seed.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -19,6 +20,7 @@
     "helmet": "^8.1.0",
     "ioredis": "^5.6.1",
     "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.0.0",
     "morgan": "^1.10.0",
     "nodemailer": "^7.0.3",
     "pg": "^8.16.0",
