@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
-const { postgresConfig } = require('../../config/database.config');
-const { jwtConfig, passwordConfig } = require('../../config/auth.config');
+const { postgresConfig } = require('../../../config/database.config');
+const { jwtConfig, passwordConfig } = require('../../../config/auth.config');
 const { AuthError } = require('../utils/errors');
 
 if (!postgresConfig.connectionString) {

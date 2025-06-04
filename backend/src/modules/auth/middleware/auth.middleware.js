@@ -1,5 +1,5 @@
-const { JwtService } = require('../auth/services/jwt.service');
-const { AuthError } = require('../auth/utils/errors');
+const { JwtService } = require('../services/jwt.service');
+const { AuthError } = require('../utils/errors');
 
 const jwtService = new JwtService();
 
