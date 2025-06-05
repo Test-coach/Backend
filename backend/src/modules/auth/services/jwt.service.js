@@ -1,15 +1,8 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { Pool } = require('pg');
-const { postgresConfig } = require('../../../config/database.config');
+const { pool } = require('../../../db/postgres');
 const { jwtConfig, passwordConfig } = require('../../../config/auth.config');
 const { AuthError } = require('../utils/errors');
-
-if (!postgresConfig.connectionString) {
-  throw new Error('DATABASE_URL environment variable is not set');
-}
-
-const pgPool = new Pool(postgresConfig);
 
 class JwtService {
   constructor() {
@@ -38,7 +31,7 @@ class JwtService {
   }
 
   async findUserById(userId) {
-    const client = await pgPool.connect();
+    const client = await pool.connect();
     try {
       const { rows } = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
       if (!rows[0]) {
@@ -51,7 +44,7 @@ class JwtService {
   }
 
   async findUserByEmail(email) {
-    const client = await pgPool.connect();
+    const client = await pool.connect();
     try {
       const { rows } = await client.query('SELECT * FROM users WHERE email = $1', [email]);
       return rows[0];

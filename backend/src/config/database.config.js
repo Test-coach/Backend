@@ -11,7 +11,12 @@ const redisConfig = {
   port: process.env.REDIS_PORT
 };
 
+const mongoConfig = {
+  uri: process.env.MONGO_URI
+};
+
 module.exports = {
   postgresConfig,
-  redisConfig
+  redisConfig,
+  mongoConfig
 }; 
