@@ -1,69 +1,59 @@
-# Test Coach Project
+# Demo Repository
 
-This is a full-stack application with separate frontend and backend services.
+A full-stack application with Node.js backend and React frontend.
 
 ## Project Structure
 
 ```
-.
-├── frontend/          # Frontend application
-├── backend/           # Backend application
-└── README.md         # This file
+demo-repository/
+├── backend/           # Node.js backend
+│   ├── src/
+│   │   ├── modules/   # Feature modules (auth, users, orders)
+│   │   ├── core/      # Core functionality
+│   │   ├── db/        # Database configuration
+│   │   └── utils/     # Utility functions
+└── frontend/          # React frontend
 ```
-
-## Prerequisites
-
-- Node.js (v14 or higher)
-- Docker and Docker Compose
-- npm or yarn package manager
 
 ## Backend Setup
 
-The backend service is built with Fastify and includes several databases:
-
-1. Navigate to the backend directory:
+1. Install dependencies:
    ```bash
    cd backend
-   ```
-
-2. Install dependencies:
-   ```bash
    npm install
    ```
 
-3. Start the development server:
+2. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Update the `.env` file with your database credentials.
+
+3. Set up the database:
+   ```bash
+   # Create database tables
+   npx prisma migrate
+   
+   # Seed the database with initial data
+   npx prisma db seed
+   ```
+
+4. Start the development server:
    ```bash
    npm run dev
    ```
-
-### Docker Services
-
-The backend uses Docker for the following services:
-- PostgreSQL (port 5432)
-- Redis (port 6379)
-- MongoDB (port 27017)
-
-To start the Docker services:
-```bash
-cd backend
-docker-compose up -d
-```
-
-To stop the Docker services:
-```bash
-docker-compose down
-```
 
 ## Frontend Setup
 
-1. Navigate to the frontend directory:
+1. Install dependencies:
    ```bash
    cd frontend
+   npm install
    ```
 
-2. Install dependencies:
+2. Set up environment variables:
    ```bash
-   npm install
+   cp .env.example .env
    ```
 
 3. Start the development server:
@@ -71,35 +61,83 @@ docker-compose down
    npm run dev
    ```
 
+## Database
+
+The application uses Prisma ORM with PostgreSQL. The database schema is defined in `backend/prisma/schema.prisma`.
+
+### Key Features
+
+- User authentication (register, login, profile)
+- Order management
+- Coupon system
+- Role-based access control
+
+### API Endpoints
+
+#### Authentication
+- POST `/api/auth/register` - Register a new user
+- POST `/api/auth/login` - Login user
+- GET `/api/auth/me` - Get user profile
+
+#### Users
+- GET `/api/users` - Get all users (admin only)
+- GET `/api/users/:id` - Get user by ID
+- PUT `/api/users/:id` - Update user
+- DELETE `/api/users/:id` - Delete user
+
+#### Orders
+- GET `/api/orders` - Get all orders
+- POST `/api/orders` - Create new order
+- GET `/api/orders/:id` - Get order by ID
+- PUT `/api/orders/:id` - Update order
+- DELETE `/api/orders/:id` - Delete order
+
 ## Development
 
-- Backend runs on: http://localhost:3000
-- Frontend runs on: http://localhost:5173 (default Vite port)
-- WebSocket endpoint: ws://localhost:3000/ws
+### Code Style
 
-## Environment Variables
+- Backend: ESLint with Airbnb config
+- Frontend: ESLint with React config
 
-### Backend
-Create a `.env` file in the backend directory with the following variables:
-```
-PORT=3000
-MONGODB_URI=mongodb://root:mongopass@localhost:27017
-POSTGRES_URI=postgresql://dev:password@localhost:5432/myappdb
-REDIS_URI=redis://localhost:6379
+### Testing
+
+```bash
+# Backend tests
+cd backend
+npm test
+
+# Frontend tests
+cd frontend
+npm test
 ```
 
-### Frontend
-Create a `.env` file in the frontend directory with the following variables:
-```
-VITE_API_URL=http://localhost:3000
-```
+## Deployment
+
+1. Build the frontend:
+   ```bash
+   cd frontend
+   npm run build
+   ```
+
+2. Set up production environment variables:
+   ```bash
+   cd backend
+   cp .env.example .env.production
+   ```
+
+3. Start the production server:
+   ```bash
+   npm start
+   ```
 
 ## Contributing
 
-1. Create a new branch for your feature
-2. Make your changes
-3. Submit a pull request
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
 ## License
 
-This project is licensed under the MIT License. 
+MIT 

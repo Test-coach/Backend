@@ -4,16 +4,24 @@
 ```
 backend/
 ├── src/
-│   ├── config/         # Configuration files
-│   ├── controllers/    # Route controllers
-│   ├── db/            # Database models and migrations
-│   ├── middleware/    # Custom middleware
-│   ├── routes/        # API routes
-│   ├── services/      # Business logic
-│   ├── utils/         # Utility functions
-│   └── app.js         # Application entry point
-├── docs/              # Documentation
-└── tests/             # Test files
+│   ├── modules/           # Feature modules
+│   │   ├── auth/         # Authentication module
+│   │   ├── users/        # User management
+│   │   ├── orders/       # Order management
+│   │   └── coupons/      # Coupon management
+│   ├── core/             # Core functionality
+│   │   ├── errors/       # Error handling
+│   │   └── utils/        # Core utilities
+│   ├── db/               # Database configuration
+│   │   ├── prisma/       # Prisma schema and migrations
+│   │   └── seed.js       # Database seeding
+│   ├── middleware/       # Express middleware
+│   ├── config/           # Configuration files
+│   └── utils/            # Utility functions
+├── prisma/               # Prisma configuration
+│   ├── schema.prisma     # Database schema
+│   └── migrations/       # Database migrations
+└── tests/                # Test files
 ```
 
 ## Core Features
@@ -45,20 +53,7 @@ backend/
   - Completion status
   - Access control
 
-### 3. Typing Test System
-- **Test Management**
-  - Test passage creation
-  - Difficulty levels
-  - Time limits
-  - Requirements (WPM, accuracy)
-
-- **Performance Tracking**
-  - WPM calculation
-  - Accuracy measurement
-  - Error tracking
-  - Progress analytics
-
-### 4. Order & Payment System
+### 3. Order & Payment System
 - **Order Processing**
   - Order creation
   - Payment processing
@@ -73,17 +68,11 @@ backend/
 
 ## Database Architecture
 
-### PostgreSQL (Core Data)
+### PostgreSQL with Prisma ORM
 - User accounts and profiles
 - Course and enrollment data
 - Orders and payments
 - Coupons and discounts
-
-### MongoDB (Analytics)
-- User activity tracking
-- Test results
-- Performance metrics
-- Learning analytics
 
 ## API Endpoints
 
@@ -91,42 +80,39 @@ backend/
 ```
 POST /api/auth/register    # User registration
 POST /api/auth/login       # User login
-POST /api/auth/verify      # Email verification
-POST /api/auth/reset       # Password reset
+GET  /api/auth/me         # Get user profile
 ```
 
 ### Users
 ```
-GET    /api/users/profile          # Get user profile
-PUT    /api/users/profile          # Update profile
-GET    /api/users/preferences      # Get preferences
-PUT    /api/users/preferences      # Update preferences
+GET    /api/users          # List users (admin)
+GET    /api/users/:id      # Get user
+PUT    /api/users/:id      # Update user
+DELETE /api/users/:id      # Delete user
 ```
 
 ### Courses
 ```
-GET    /api/courses               # List courses
-POST   /api/courses              # Create course
-GET    /api/courses/:id          # Get course
-PUT    /api/courses/:id          # Update course
-POST   /api/courses/:id/enroll   # Enroll in course
-```
-
-### Tests
-```
-GET    /api/tests               # List tests
-POST   /api/tests              # Create test
-GET    /api/tests/:id          # Get test
-POST   /api/tests/:id/start    # Start test
-POST   /api/tests/:id/submit   # Submit test results
+GET    /api/courses        # List courses
+POST   /api/courses       # Create course
+GET    /api/courses/:id   # Get course
+PUT    /api/courses/:id   # Update course
 ```
 
 ### Orders
 ```
-GET    /api/orders             # List orders
-POST   /api/orders            # Create order
-GET    /api/orders/:id        # Get order
-POST   /api/orders/:id/pay    # Process payment
+GET    /api/orders        # List orders
+POST   /api/orders       # Create order
+GET    /api/orders/:id   # Get order
+PUT    /api/orders/:id   # Update order
+```
+
+### Coupons
+```
+GET    /api/coupons       # List coupons
+POST   /api/coupons      # Create coupon
+GET    /api/coupons/:id  # Get coupon
+PUT    /api/coupons/:id  # Update coupon
 ```
 
 ## Security Features
@@ -155,52 +141,12 @@ POST   /api/orders/:id/pay    # Process payment
 - Error logging
 - Client-friendly error messages
 
-## Future Enhancements
-
-### Planned Features
-1. **Advanced Analytics**
-   - Detailed performance reports
-   - Learning path recommendations
-   - Progress predictions
-
-2. **Social Features**
-   - User leaderboards
-   - Achievement system
-   - Social sharing
-
-3. **Content Management**
-   - Dynamic test generation
-   - Content versioning
-   - Bulk content import
-
-4. **Payment Integration**
-   - Multiple payment gateways
-   - Subscription management
-   - Refund processing
-
-### Scalability Considerations
-1. **Database**
-   - Read replicas
-   - Sharding strategy
-   - Cache implementation
-
-2. **API**
-   - API versioning
-   - Rate limiting
-   - Caching headers
-
-3. **Performance**
-   - Query optimization
-   - Index management
-   - Connection pooling
-
 ## Development Guidelines
 
 ### Code Style
 - ESLint configuration
 - Prettier formatting
 - JSDoc documentation
-- TypeScript integration
 
 ### Testing
 - Unit tests with Jest
@@ -208,11 +154,60 @@ POST   /api/orders/:id/pay    # Process payment
 - API tests
 - Performance testing
 
-### Deployment
-- Docker containerization
-- CI/CD pipeline
-- Environment configuration
-- Monitoring setup
+### Database Operations
+```javascript
+// Create
+const user = await prisma.user.create({
+  data: {
+    email: 'user@example.com',
+    username: 'user',
+    password: hashedPassword
+  }
+});
+
+// Read
+const user = await prisma.user.findUnique({
+  where: { id: 'user_id' },
+  include: { profile: true }
+});
+
+// Update
+const user = await prisma.user.update({
+  where: { id: 'user_id' },
+  data: { role: 'admin' }
+});
+
+// Delete
+const user = await prisma.user.delete({
+  where: { id: 'user_id' }
+});
+```
+
+## Setup and Installation
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Set up the database:
+   ```bash
+   # Create database tables
+   npx prisma migrate
+   
+   # Seed the database
+   npx prisma db seed
+   ```
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
 ## Maintenance
 

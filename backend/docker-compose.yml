@@ -9,15 +9,9 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3000
-      POSTGRES_USER: dev
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: myappdb
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
+      DATABASE_URL: postgresql://dev:password@postgres:5432/myappdb
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      MONGO_URI: mongodb://root:mongopass@mongodb:27017
-      MONGO_DB: typing_analytics
       JWT_SECRET: your-super-secret-key
       NODE_OPTIONS: --inspect=0.0.0.0:9229
     ports:
@@ -28,12 +22,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      mongodb:
-        condition: service_healthy
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
-    command: npm run dev
+    command: >
+      sh -c "npx prisma migrate deploy && npm run dev"
 
   postgres:
     image: postgres:15
@@ -46,7 +39,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./create-table.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dev -d myappdb"]
       interval: 5s
@@ -67,23 +59,6 @@ services:
       timeout: 5s
       retries: 5
 
-  mongodb:
-    image: mongo:6.0
-    container_name: typing-master-mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: mongopass
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
 volumes:
   postgres_data:
   redis_data:
-  mongodb_data:
