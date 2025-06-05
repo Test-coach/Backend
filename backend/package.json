@@ -8,9 +8,19 @@
     "dev": "node --watch src/app.js",
     "test:db": "psql -U dev -d myappdb -c 'SELECT NOW()'",
     "test:redis": "redis-cli ping",
-    "seed": "node src/db/seed.js"
+    "seed": "node src/db/seed.js",
+    "migrate": "node src/db/prisma/migrations/migrate.js",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:reset": "prisma migrate reset",
+    "migrate:status": "prisma migrate status",
+    "db:seed": "prisma db seed",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio",
+    "test": "jest",
+    "test:prisma": "node src/db/prisma/tests/prisma.test.js"
   },
   "dependencies": {
+    "@prisma/client": "^6.9.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -34,7 +44,11 @@
     "@types/node": "^22.15.29",
     "jest": "^29.7.0",
     "nodemon": "^3.1.10",
+    "prisma": "^6.9.0",
     "supertest": "^7.1.1",
     "typescript": "^5.8.3"
+  },
+  "prisma": {
+    "seed": "node src/db/prisma/seed.js"
   }
 }

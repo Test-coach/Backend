@@ -1,7 +1,7 @@
 const { JwtService } = require('../services/jwt.service');
-const { Pool } = require('pg');
 const { AuthError } = require('../utils/errors');
-const { pool } = require('../../../db/postgres');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 class AuthController {
   constructor() {
@@ -9,58 +9,64 @@ class AuthController {
   }
 
   async register(req, res, next) {
-    const client = await pool.connect();
     try {
       const { email, username, password } = req.body;
 
       // Check if user already exists
-      const { rows: existingUsers } = await client.query(
-        'SELECT * FROM users WHERE email = $1 OR username = $2',
-        [email, username]
-      );
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email },
+            { username }
+          ]
+        }
+      });
 
-      if (existingUsers.length > 0) {
+      if (existingUser) {
         throw new AuthError('Email or username already exists', 400);
       }
 
       // Hash password
       const hashedPassword = await this.jwtService.hashPassword(password);
 
-      // Create user
-      const { rows: [user] } = await client.query(
-        'INSERT INTO users (email, username, password_hash) VALUES ($1, $2, $3) RETURNING id, email, username',
-        [email, username, hashedPassword]
-      );
+      // Create user with default preferences
+      const user = await prisma.user.create({
+        data: {
+          email,
+          username,
+          password_hash: hashedPassword,
+          preferences: {
+            create: {} // Creates default preferences
+          }
+        },
+        select: {
+          id: true,
+          email: true,
+          username: true
+        }
+      });
 
       // Generate token
       const token = await this.jwtService.generateToken(user.id);
 
       res.status(201).json({
         message: 'User registered successfully',
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username
-        },
+        user,
         token
       });
     } catch (error) {
       next(error);
-    } finally {
-      client.release();
     }
   }
 
   async login(req, res, next) {
-    const client = await pool.connect();
     try {
       const { email, password } = req.body;
 
       // Find user
-      const { rows: [user] } = await client.query(
-        'SELECT * FROM users WHERE email = $1',
-        [email]
-      );
+      const user = await prisma.user.findUnique({
+        where: { email }
+      });
 
       if (!user) {
         throw new AuthError('Invalid credentials', 401);
@@ -71,6 +77,12 @@ class AuthController {
       if (!isValidPassword) {
         throw new AuthError('Invalid credentials', 401);
       }
+
+      // Update last login
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { last_login: new Date() }
+      });
 
       // Generate token
       const token = await this.jwtService.generateToken(user.id);
@@ -86,18 +98,81 @@ class AuthController {
       });
     } catch (error) {
       next(error);
-    } finally {
-      client.release();
     }
   }
 
   async getProfile(req, res, next) {
     try {
-      const user = await this.jwtService.findUserById(req.user.id);
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          profile: true,
+          preferences: true
+        }
+      });
+
+      if (!user) {
+        throw new AuthError('User not found', 404);
+      }
+
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateProfile(req, res, next) {
+    try {
+      const { firstName, lastName, avatar, bio, phoneNumber } = req.body;
+
+      const profile = await prisma.userProfile.upsert({
+        where: { user_id: req.user.id },
+        update: {
+          first_name: firstName,
+          last_name: lastName,
+          avatar_url: avatar,
+          bio,
+          phone: phoneNumber
+        },
+        create: {
+          user_id: req.user.id,
+          first_name: firstName,
+          last_name: lastName,
+          avatar_url: avatar,
+          bio,
+          phone: phoneNumber
+        }
+      });
+
       res.json({
-        id: user.id,
-        email: user.email,
-        username: user.username
+        message: 'Profile updated successfully',
+        profile
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updatePreferences(req, res, next) {
+    try {
+      const { theme, emailNotifications, pushNotifications, privacySettings } = req.body;
+
+      const preferences = await prisma.userPreference.update({
+        where: { user_id: req.user.id },
+        data: {
+          theme,
+          email_notifications: emailNotifications,
+          push_notifications: pushNotifications,
+          privacy_settings: privacySettings
+        }
+      });
+
+      res.json({
+        message: 'Preferences updated successfully',
+        preferences
       });
     } catch (error) {
       next(error);

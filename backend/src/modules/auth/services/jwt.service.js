@@ -1,56 +1,120 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { pool } = require('../../../db/postgres');
-const { jwtConfig, passwordConfig } = require('../../../config/auth.config');
+const { PrismaClient } = require('@prisma/client');
 const { AuthError } = require('../utils/errors');
+
+const prisma = new PrismaClient();
 
 class JwtService {
   constructor() {
-    this.secret = jwtConfig.secret;
-    this.saltRounds = passwordConfig.saltRounds;
+    this.secret = process.env.JWT_SECRET;
+    this.expiresIn = process.env.JWT_EXPIRES_IN || '24h';
   }
 
   async generateToken(userId) {
-    return jwt.sign({ id: userId }, this.secret, { expiresIn: jwtConfig.expiresIn });
+    try {
+      const token = jwt.sign({ id: userId }, this.secret, {
+        expiresIn: this.expiresIn
+      });
+
+      // Store token in user_sessions
+      await prisma.userSession.create({
+        data: {
+          user_id: userId,
+          token,
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+          device_info: {},
+          ip_address: null
+        }
+      });
+
+      return token;
+    } catch (error) {
+      throw new AuthError('Error generating token', 500);
+    }
   }
 
   async verifyToken(token) {
     try {
-      return jwt.verify(token, this.secret);
-    } catch (err) {
-      throw new AuthError('Invalid token', 401);
+      const decoded = jwt.verify(token, this.secret);
+      
+      // Check if token exists in user_sessions
+      const session = await prisma.userSession.findFirst({
+        where: {
+          token,
+          expires_at: {
+            gt: new Date()
+          }
+        }
+      });
+
+      if (!session) {
+        throw new AuthError('Invalid or expired token', 401);
+      }
+
+      return decoded;
+    } catch (error) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new AuthError('Invalid token', 401);
+      }
+      throw error;
     }
   }
 
   async hashPassword(password) {
-    return bcrypt.hash(password, this.saltRounds);
+    const salt = await bcrypt.genSalt(10);
+    return bcrypt.hash(password, salt);
   }
 
-  async comparePassword(password, hash) {
-    return bcrypt.compare(password, hash);
+  async comparePassword(candidatePassword, hashedPassword) {
+    return bcrypt.compare(candidatePassword, hashedPassword);
   }
 
   async findUserById(userId) {
-    const client = await pool.connect();
-    try {
-      const { rows } = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
-      if (!rows[0]) {
-        throw new AuthError('User not found', 404);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        is_active: true,
+        is_verified: true
       }
-      return rows[0];
-    } finally {
-      client.release();
+    });
+
+    if (!user) {
+      throw new AuthError('User not found', 404);
     }
+
+    return user;
   }
 
   async findUserByEmail(email) {
-    const client = await pool.connect();
-    try {
-      const { rows } = await client.query('SELECT * FROM users WHERE email = $1', [email]);
-      return rows[0];
-    } finally {
-      client.release();
-    }
+    return prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        password_hash: true,
+        role: true,
+        is_active: true,
+        is_verified: true
+      }
+    });
+  }
+
+  async invalidateToken(token) {
+    await prisma.userSession.deleteMany({
+      where: { token }
+    });
+  }
+
+  async invalidateAllUserTokens(userId) {
+    await prisma.userSession.deleteMany({
+      where: { user_id: userId }
+    });
   }
 }
 
