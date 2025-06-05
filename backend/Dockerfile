@@ -8,8 +8,14 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm install
 
+# Install Prisma CLI
+RUN npm install prisma --save-dev
+
 # Copy app source
 COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
 
 # Set environment variables
 ENV NODE_ENV=development

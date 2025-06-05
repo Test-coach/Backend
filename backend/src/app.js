@@ -13,8 +13,6 @@ const { requestLogger } = require('./middleware/logger.middleware');
 const { errorHandler } = require('./middleware/error.middleware');
 const { redisConfig } = require('./config/database.config');
 const { serverConfig, rateLimitConfig } = require('./config/server.config');
-const DatabaseInitializer = require('./db/postgres/utils/db.init');
-const { pool } = require('./db/postgres');
 const { notFoundHandler } = require('./middleware/not-found.middleware');
 const { prisma, testConnection } = require('./db');
 
@@ -26,16 +24,6 @@ const httpServer = createServer(app);
 
 // Initialize Redis connection
 const redis = new Redis(redisConfig);
-
-// Test database connections
-pool.on('connect', () => {
-  console.log('Connected to PostgreSQL database');
-});
-
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle PostgreSQL client', err);
-  process.exit(-1);
-});
 
 const wss = new WebSocketServer({ server: httpServer });
 
@@ -64,13 +52,8 @@ app.get('/health', (req, res) => {
 
 app.get('/test-db', async (req, res) => {
   try {
-    const client = await pool.connect();
-    try {
-      const { rows } = await client.query('SELECT NOW() as time, current_database() as db');
-      res.json(rows[0]);
-    } finally {
-      client.release();
-    }
+    const result = await prisma.$queryRaw`SELECT NOW() as time, current_database() as db`;
+    res.json(result[0]);
   } catch (err) {
     res.status(500).json({ error: 'Database error' });
   }
@@ -79,7 +62,6 @@ app.get('/test-db', async (req, res) => {
 app.get('/protected', authenticateJWT, (req, res) => {
   res.json({ message: 'This is a protected route', user: req.user });
 });
-
 
 wss.on('connection', (ws) => {
   ws.on('message', (message) => {
@@ -98,7 +80,6 @@ wss.on('connection', (ws) => {
 });
 
 // Routes
-
 app.use('/auth', authRoutes);
 // app.use('/api/users', require('./modules/users/routes/user.routes'));
 // app.use('/api/orders', require('./modules/orders/routes/order.routes'));
@@ -113,10 +94,10 @@ const gracefulShutdown = async () => {
   
   // Close database connections
   try {
-    await pool.end();
-    console.log('PostgreSQL pool closed');
+    await prisma.$disconnect();
+    console.log('Prisma connection closed');
   } catch (err) {
-    console.error('Error closing PostgreSQL pool:', err);
+    console.error('Error closing Prisma connection:', err);
   }
 
   try {
@@ -136,7 +117,6 @@ const gracefulShutdown = async () => {
 // Handle shutdown signals
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
-
 
 // Database connection and server start
 async function startServer() {
