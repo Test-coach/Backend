@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     Int              @id @default(autoincrement())
+  email                  String           @unique
+  username               String           @unique
+  password_hash          String
+  is_active              Boolean          @default(true)
+  is_verified            Boolean          @default(false)
+  last_login             DateTime?
+  created_at             DateTime         @default(now())
+  updated_at             DateTime         @updatedAt
+  reset_password_token   String?          @unique
+  reset_password_expires DateTime?
+  role                   String           @default("user")
+  role_id                Int?
+  couponUsages           CouponUsage[]
+  orders                 Order[]
+  userRole               UserRole?        @relation(fields: [role_id], references: [id])
+  preferences            UserPreference[]
+  profile                UserProfile?
+  sessions               UserSession[]
+
+  @@index([role])
+  @@index([role_id])
+  @@index([email])
+  @@index([username])
+  @@index([reset_password_token])
+}
+
+model UserRole {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  permissions Json     @default("{}")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  users       User[]
+}
+
+model UserProfile {
+  id         Int      @id @default(autoincrement())
+  user_id    Int      @unique
+  first_name String?
+  last_name  String?
+  avatar_url String?
+  bio        String?
+  phone      String?
+  country    String?
+  timezone   String?
+  language   String?  @default("en")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       User     @relation(fields: [user_id], references: [id])
+}
+
+model UserSession {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  token       String   @unique
+  device_info Json?
+  ip_address  String?
+  expires_at  DateTime
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  user        User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([token])
+}
+
+model UserPreference {
+  id                  Int      @id @default(autoincrement())
+  user_id             Int
+  theme               String?  @default("light")
+  email_notifications Json?    @default("{\"updates\": true, \"security\": true, \"marketing\": true}")
+  push_notifications  Json?    @default("{\"updates\": true, \"security\": true, \"marketing\": true}")
+  privacy_settings    Json?    @default("{\"show_email\": false, \"profile_visibility\": \"public\"}")
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+  user                User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+}
+
+model Coupon {
+  id                Int           @id @default(autoincrement())
+  code              String        @unique
+  type              String
+  value             Decimal
+  max_discount      Decimal?
+  min_purchase      Decimal?
+  start_date        DateTime
+  end_date          DateTime
+  max_uses          Int?
+  max_uses_per_user Int?          @default(1)
+  uses_count        Int?          @default(0)
+  is_active         Boolean       @default(true)
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+  couponUsages      CouponUsage[]
+  orders            Order[]
+
+  @@index([code])
+  @@index([is_active])
+}
+
+model Order {
+  id                         Int       @id @default(autoincrement())
+  user_id                    Int?
+  course_id                  String
+  amount                     Decimal
+  original_amount            Decimal?
+  currency                   String?   @default("INR")
+  payment_method             String
+  coupon_id                  Int?
+  discount_amount            Decimal?  @default(0)
+  status                     String?   @default("pending")
+  payment_details            Json?
+  order_number               String?   @unique
+  access_expiry              DateTime?
+  invoice_number             String?
+  invoice_url                String?
+  invoice_generated_at       DateTime?
+  notes                      String?
+  metadata                   Json?
+  payment_transaction_id     String?
+  payment_gateway_order_id   String?
+  payment_gateway_payment_id String?
+  payment_status             String?   @default("initiated")
+  payment_gateway            String?
+  payment_gateway_response   Json?
+  payment_paid_at            DateTime?
+  created_at                 DateTime  @default(now())
+  updated_at                 DateTime  @updatedAt
+  coupon                     Coupon?   @relation(fields: [coupon_id], references: [id])
+  user                       User?     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, course_id])
+  @@index([created_at])
+  @@index([payment_transaction_id])
+  @@index([order_number])
+}
+
+model CouponUsage {
+  id        Int      @id @default(autoincrement())
+  coupon_id Int
+  user_id   Int
+  used_at   DateTime @default(now())
+  coupon    Coupon   @relation(fields: [coupon_id], references: [id])
+  user      User     @relation(fields: [user_id], references: [id])
+
+  @@unique([coupon_id, user_id])
+  @@index([coupon_id])
+  @@index([user_id])
+}

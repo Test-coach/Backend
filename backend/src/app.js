@@ -15,6 +15,8 @@ const { redisConfig } = require('./config/database.config');
 const { serverConfig, rateLimitConfig } = require('./config/server.config');
 const DatabaseInitializer = require('./db/postgres/utils/db.init');
 const { pool } = require('./db/postgres');
+const { notFoundHandler } = require('./middleware/not-found.middleware');
+const { prisma, testConnection } = require('./db');
 
 // Load environment variables
 dotenv.config({ path: path.resolve('config/env/development.env') });
@@ -41,6 +43,7 @@ const wss = new WebSocketServer({ server: httpServer });
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
 // Rate limiting
@@ -77,7 +80,6 @@ app.get('/protected', authenticateJWT, (req, res) => {
   res.json({ message: 'This is a protected route', user: req.user });
 });
 
-app.use('/auth', authRoutes);
 
 wss.on('connection', (ws) => {
   ws.on('message', (message) => {
@@ -95,6 +97,15 @@ wss.on('connection', (ws) => {
   });
 });
 
+// Routes
+
+app.use('/auth', authRoutes);
+// app.use('/api/users', require('./modules/users/routes/user.routes'));
+// app.use('/api/orders', require('./modules/orders/routes/order.routes'));
+// app.use('/api/coupons', require('./modules/coupons/routes/coupon.routes'));
+
+// Error handling
+app.use(notFoundHandler);
 app.use(errorHandler);
 
 const gracefulShutdown = async () => {
@@ -126,14 +137,15 @@ const gracefulShutdown = async () => {
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
-// Initialize database and start server
-const startServer = async () => {
+
+// Database connection and server start
+async function startServer() {
   try {
-    // Initialize database (migrations and seeders)
-    await DatabaseInitializer.initialize({
-      seed: process.env.NODE_ENV === 'development',
-      clearData: process.env.CLEAR_DB === 'true'
-    });
+    // Test database connection
+    const isConnected = await testConnection();
+    if (!isConnected) {
+      throw new Error('Database connection failed');
+    }
 
     // Start server
     httpServer.listen(serverConfig.port, () => {
@@ -144,6 +156,6 @@ const startServer = async () => {
     console.error('Failed to start server:', error);
     process.exit(1);
   }
-};
+}
 
 startServer();

@@ -1,25 +1,22 @@
-// PostgreSQL
-const postgres = require('./postgres');
-const User = require('./postgres/models/user.model');
-const Order = require('./postgres/models/order.model');
-const Coupon = require('./postgres/models/coupon.model');
+const { PrismaClient } = require('@prisma/client');
 
-// MongoDB
-const mongo = require('./mongo');
-const Course = require('./mongo/models/course.model');
-const Keystroke = require('./mongo/models/keystroke.model');
+// Create a single PrismaClient instance
+const prisma = new PrismaClient();
 
+// Test database connection
+async function testConnection() {
+  try {
+    await prisma.$connect();
+    console.log('Database connection successful');
+    return true;
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    return false;
+  }
+}
+
+// Export Prisma client and connection test
 module.exports = {
-  // Database connections
-  postgres,
-  mongo,
-
-  // PostgreSQL models
-  User,
-  Order,
-  Coupon,
-
-  // MongoDB models
-  Course,
-  Keystroke
+  prisma,
+  testConnection
 }; 
