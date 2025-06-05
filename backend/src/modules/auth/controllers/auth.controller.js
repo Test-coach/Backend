@@ -1,79 +1,79 @@
 const { JwtService } = require('../services/jwt.service');
 const { Pool } = require('pg');
 const { AuthError } = require('../utils/errors');
-const { postgresConfig } = require('../../../config/database.config');
-
-if (!postgresConfig.connectionString) {
-  throw new Error('DATABASE_URL environment variable is not set');
-}
-
-const pgPool = new Pool(postgresConfig);
-const jwtService = new JwtService();
+const { pool } = require('../../../db/postgres');
 
 class AuthController {
-  async register(req, res) {
+  constructor() {
+    this.jwtService = new JwtService();
+  }
+
+  async register(req, res, next) {
+    const client = await pool.connect();
     try {
-      const { email, password, username } = req.body;
-      
-      // Check if user exists
-      const existingUser = await jwtService.findUserByEmail(email);
-      if (existingUser) {
-        throw new AuthError('User already exists', 400);
+      const { email, username, password } = req.body;
+
+      // Check if user already exists
+      const { rows: existingUsers } = await client.query(
+        'SELECT * FROM users WHERE email = $1 OR username = $2',
+        [email, username]
+      );
+
+      if (existingUsers.length > 0) {
+        throw new AuthError('Email or username already exists', 400);
       }
 
       // Hash password
-      const hashedPassword = await jwtService.hashPassword(password);
+      const hashedPassword = await this.jwtService.hashPassword(password);
 
       // Create user
-      const client = await pgPool.connect();
-      try {
-        const { rows: newUser } = await client.query(
-          'INSERT INTO users (email, password, username) VALUES ($1, $2, $3) RETURNING id, email, username',
-          [email, hashedPassword, username]
-        );
+      const { rows: [user] } = await client.query(
+        'INSERT INTO users (email, username, password_hash) VALUES ($1, $2, $3) RETURNING id, email, username',
+        [email, username, hashedPassword]
+      );
 
-        // Generate token
-        const token = await jwtService.generateToken(newUser[0].id);
+      // Generate token
+      const token = await this.jwtService.generateToken(user.id);
 
-        res.status(201).json({
-          message: 'User registered successfully',
-          user: {
-            id: newUser[0].id,
-            email: newUser[0].email,
-            username: newUser[0].username
-          },
-          token
-        });
-      } finally {
-        client.release();
-      }
-    } catch (err) {
-      if (err instanceof AuthError) {
-        return res.status(err.statusCode).json({ error: err.message });
-      }
-      console.error(err);
-      res.status(500).json({ error: 'Registration failed' });
+      res.status(201).json({
+        message: 'User registered successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username
+        },
+        token
+      });
+    } catch (error) {
+      next(error);
+    } finally {
+      client.release();
     }
   }
 
-  async login(req, res) {
+  async login(req, res, next) {
+    const client = await pool.connect();
     try {
       const { email, password } = req.body;
 
       // Find user
-      const user = await jwtService.findUserByEmail(email);
+      const { rows: [user] } = await client.query(
+        'SELECT * FROM users WHERE email = $1',
+        [email]
+      );
+
       if (!user) {
         throw new AuthError('Invalid credentials', 401);
       }
 
       // Verify password
-      const validPassword = await jwtService.comparePassword(password, user.password);
-      if (!validPassword) {
+      const isValidPassword = await this.jwtService.comparePassword(password, user.password_hash);
+      if (!isValidPassword) {
         throw new AuthError('Invalid credentials', 401);
       }
 
       // Generate token
-      const token = await jwtService.generateToken(user.id);
+      const token = await this.jwtService.generateToken(user.id);
 
       res.json({
         message: 'Login successful',
@@ -84,38 +84,23 @@ class AuthController {
         },
         token
       });
-    } catch (err) {
-      if (err instanceof AuthError) {
-        return res.status(err.statusCode).json({ error: err.message });
-      }
-      console.error(err);
-      res.status(500).json({ error: 'Login failed' });
+    } catch (error) {
+      next(error);
+    } finally {
+      client.release();
     }
   }
 
-  async getCurrentUser(req, res) {
+  async getProfile(req, res, next) {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
-      if (!token) {
-        throw new AuthError('No token provided', 401);
-      }
-
-      const decoded = await jwtService.verifyToken(token);
-      const user = await jwtService.findUserById(decoded.id);
-
+      const user = await this.jwtService.findUserById(req.user.id);
       res.json({
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username
-        }
+        id: user.id,
+        email: user.email,
+        username: user.username
       });
-    } catch (err) {
-      if (err instanceof AuthError) {
-        return res.status(err.statusCode).json({ error: err.message });
-      }
-      console.error(err);
-      res.status(500).json({ error: 'Failed to get user data' });
+    } catch (error) {
+      next(error);
     }
   }
 }
