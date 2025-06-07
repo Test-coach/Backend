@@ -22,7 +22,10 @@ class AuthController {
       });
 
       if (existingUser) {
-        throw new AuthError('Email or username already exists', 400);
+        return res.status(400).json({
+          status: 'error',
+          message: 'Email or username already exists'
+        });
       }
 
       // Hash password
@@ -68,13 +71,19 @@ class AuthController {
       });
 
       if (!user) {
-        throw new AuthError('Invalid credentials', 401);
+        return res.status(401).json({
+          status: 'error',
+          message: 'Invalid credentials'
+        });
       }
 
       // Verify password
       const isValidPassword = await this.jwtService.comparePassword(password, user.password_hash);
       if (!isValidPassword) {
-        throw new AuthError('Invalid credentials', 401);
+        return res.status(401).json({
+          status: 'error',
+          message: 'Invalid credentials'
+        });
       }
 
       // Update last login
@@ -114,7 +123,10 @@ class AuthController {
       });
 
       if (!user) {
-        throw new AuthError('User not found', 404);
+        return res.status(404).json({
+          status: 'error',
+          message: 'User not found'
+        });
       }
 
       res.json(user);

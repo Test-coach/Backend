@@ -3,8 +3,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const { createServer } = require('http');
-const { WebSocketServer } = require('ws');
-const Redis = require('ioredis');
 const dotenv = require('dotenv');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
@@ -16,6 +14,8 @@ const { serverConfig, rateLimitConfig } = require('./config/server.config');
 const { notFoundHandler } = require('./middleware/not-found.middleware');
 const { prisma, testConnection } = require('./db');
 const corsOptions = require('./config/cors.config');
+const features = require('./config/features.config');
+const cacheService = require('./services/cache.service');
 
 // Load environment variables
 dotenv.config();
@@ -23,10 +23,40 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
-// Initialize Redis connection
-const redis = new Redis(redisConfig);
+// Initialize Redis and WebSocket only if enabled
+let redis = null;
+let wss = null;
 
-const wss = new WebSocketServer({ server: httpServer });
+if (features.redis.enabled) {
+  const Redis = require('ioredis');
+  const { WebSocketServer } = require('ws');
+  
+  redis = new Redis(redisConfig);
+  console.log('Redis connection initialized');
+
+  if (features.websocket.enabled) {
+    wss = new WebSocketServer({ server: httpServer });
+    console.log('WebSocket server initialized');
+
+    wss.on('connection', (ws) => {
+      ws.on('message', (message) => {
+        redis.publish('ws:messages', message.toString());
+      });
+
+      redis.subscribe('ws:messages', (err) => {
+        if (err) ws.close(1011, 'Subscription failed');
+      });
+
+      redis.on('message', (channel, msg) => {
+        if (channel === 'ws:messages') {
+          ws.send(`Broadcast: ${msg}`);
+        }
+      });
+    });
+  }
+} else {
+  console.log('Using in-memory cache');
+}
 
 // Middleware
 app.use(helmet());
@@ -45,10 +75,34 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
     db: 'PostgreSQL',
-    cache: 'Redis',
+    cache: features.redis.enabled ? 'Redis' : 'In-Memory',
+    websocket: features.websocket.enabled ? 'Enabled' : 'Disabled',
     timestamp: new Date().toISOString(),
     environment: serverConfig.env
   });
+});
+
+// Example of using cache
+app.get('/cache-test', (req, res) => {
+  const key = 'test-key';
+  let value;
+  
+  if (features.redis.enabled) {
+    value = redis.get(key);
+  } else {
+    value = cacheService.get(key);
+  }
+  
+  if (!value) {
+    value = { message: 'This is a cached value', timestamp: new Date().toISOString() };
+    if (features.redis.enabled) {
+      redis.set(key, JSON.stringify(value), 'EX', 3600);
+    } else {
+      cacheService.set(key, value);
+    }
+  }
+  
+  res.json(value);
 });
 
 app.get('/test-db', async (req, res) => {
@@ -64,27 +118,8 @@ app.get('/protected', authenticateJWT, (req, res) => {
   res.json({ message: 'This is a protected route', user: req.user });
 });
 
-wss.on('connection', (ws) => {
-  ws.on('message', (message) => {
-    redis.publish('ws:messages', message.toString());
-  });
-
-  redis.subscribe('ws:messages', (err) => {
-    if (err) ws.close(1011, 'Subscription failed');
-  });
-
-  redis.on('message', (channel, msg) => {
-    if (channel === 'ws:messages') {
-      ws.send(`Broadcast: ${msg}`);
-    }
-  });
-});
-
 // Routes
 app.use('/auth', authRoutes);
-// app.use('/api/users', require('./modules/users/routes/user.routes'));
-// app.use('/api/orders', require('./modules/orders/routes/order.routes'));
-// app.use('/api/coupons', require('./modules/coupons/routes/coupon.routes'));
 
 // Error handling
 app.use(notFoundHandler);
@@ -103,11 +138,14 @@ const gracefulShutdown = async () => {
     console.error('Error closing Prisma connection:', err);
   }
 
-  try {
-    await redis.quit();
-    console.log('Redis connection closed');
-  } catch (err) {
-    console.error('Error closing Redis connection:', err);
+  // Close Redis connection if enabled
+  if (features.redis.enabled && redis) {
+    try {
+      await redis.quit();
+      console.log('Redis connection closed');
+    } catch (err) {
+      console.error('Error closing Redis connection:', err);
+    }
   }
 
   // Close HTTP server
@@ -133,7 +171,9 @@ async function startServer() {
     // Start server
     httpServer.listen(serverConfig.port, () => {
       console.log(`Server ready on port ${serverConfig.port} in ${serverConfig.env} mode`);
-      console.log(`WebSocket endpoint: ws://localhost:${serverConfig.port}`);
+      if (features.websocket.enabled) {
+        console.log(`WebSocket endpoint: ws://localhost:${serverConfig.port}`);
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);

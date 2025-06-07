@@ -11,10 +11,9 @@ services:
       - PORT=3000
       - API_PREFIX=/api/v1
       - DATABASE_URL=postgresql://dev:password@postgres:5432/myappdb?schema=public
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=
-      - REDIS_DB=0
+      - REDIS_URL=redis://redis:6379
+      - ENABLE_REDIS=false
+      - ENABLE_WEBSOCKET=false
       - JWT_SECRET=your_jwt_super_secret_key_here
       - JWT_EXPIRES_IN=24h
       - SALT_ROUNDS=12
