@@ -1,131 +1,177 @@
-# Demo Repository
+# Backend API Service
 
-A full-stack application with Node.js backend and React frontend.
+A robust Node.js backend service built with Express.js and Prisma ORM, featuring authentication, user management, order processing, and coupon system.
+
+## Tech Stack
+
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: PostgreSQL
+- **ORM**: Prisma
+- **Authentication**: JWT
+- **Caching**: Redis
+- **WebSocket**: ws
+- **Testing**: Jest
 
 ## Project Structure
 
 ```
-demo-repository/
-├── backend/           # Node.js backend
-│   ├── src/
-│   │   ├── modules/   # Feature modules (auth, users, orders)
-│   │   ├── core/      # Core functionality
-│   │   ├── db/        # Database configuration
-│   │   └── utils/     # Utility functions
-└── frontend/          # React frontend
+backend/
+├── src/
+│   ├── modules/          # Feature modules
+│   │   ├── auth/        # Authentication module
+│   │   ├── users/       # User management
+│   │   ├── orders/      # Order processing
+│   │   └── coupons/     # Coupon system
+│   ├── core/            # Core functionality
+│   │   ├── config/      # Configuration files
+│   │   ├── middleware/  # Custom middleware
+│   │   └── utils/       # Utility functions
+│   ├── db/              # Database configuration
+│   │   ├── prisma/      # Prisma setup and models
+│   │   └── migrations/  # Database migrations
+│   └── app.js           # Application entry point
+├── prisma/              # Prisma schema and migrations
+└── tests/               # Test files
 ```
 
-## Backend Setup
+## Prerequisites
 
-1. Install dependencies:
+- Node.js (v14 or higher)
+- PostgreSQL
+- Redis
+- Docker (optional)
+
+## Setup
+
+1. **Clone the repository**
    ```bash
+   git clone <repository-url>
    cd backend
+   ```
+
+2. **Install dependencies**
+   ```bash
    npm install
    ```
 
-2. Set up environment variables:
+3. **Environment Setup**
    ```bash
    cp .env.example .env
    ```
-   Update the `.env` file with your database credentials.
+   Update the `.env` file with your configuration:
+   - Database credentials
+   - JWT secret
+   - Redis configuration
+   - Server settings
 
-3. Set up the database:
+4. **Database Setup**
    ```bash
-   # Create database tables
-   npx prisma migrate
+   # Run migrations
+   npx prisma migrate deploy
    
-   # Seed the database with initial data
+   # Seed the database
    npx prisma db seed
    ```
 
-4. Start the development server:
+5. **Start Development Server**
    ```bash
    npm run dev
    ```
 
-## Frontend Setup
+## API Documentation
 
-1. Install dependencies:
-   ```bash
-   cd frontend
-   npm install
-   ```
+### Authentication
 
-2. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   ```
+- `POST /auth/register` - Register new user
+- `POST /auth/login` - User login
+- `POST /auth/logout` - User logout
+- `GET /auth/me` - Get current user profile
+- `POST /auth/refresh-token` - Refresh JWT token
 
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
+### Users
 
-## Database
+- `GET /users` - List users (admin only)
+- `GET /users/:id` - Get user details
+- `PUT /users/:id` - Update user
+- `DELETE /users/:id` - Delete user
 
-The application uses Prisma ORM with PostgreSQL. The database schema is defined in `backend/prisma/schema.prisma`.
+### Orders
 
-### Key Features
+- `GET /orders` - List orders
+- `POST /orders` - Create order
+- `GET /orders/:id` - Get order details
+- `PUT /orders/:id` - Update order
+- `DELETE /orders/:id` - Delete order
 
-- User authentication (register, login, profile)
-- Order management
-- Coupon system
-- Role-based access control
+### Coupons
 
-### API Endpoints
-
-#### Authentication
-- POST `/api/auth/register` - Register a new user
-- POST `/api/auth/login` - Login user
-- GET `/api/auth/me` - Get user profile
-
-#### Users
-- GET `/api/users` - Get all users (admin only)
-- GET `/api/users/:id` - Get user by ID
-- PUT `/api/users/:id` - Update user
-- DELETE `/api/users/:id` - Delete user
-
-#### Orders
-- GET `/api/orders` - Get all orders
-- POST `/api/orders` - Create new order
-- GET `/api/orders/:id` - Get order by ID
-- PUT `/api/orders/:id` - Update order
-- DELETE `/api/orders/:id` - Delete order
+- `GET /coupons` - List coupons
+- `POST /coupons` - Create coupon
+- `GET /coupons/:code` - Get coupon details
+- `PUT /coupons/:id` - Update coupon
+- `DELETE /coupons/:id` - Delete coupon
 
 ## Development
 
 ### Code Style
+- ESLint with Airbnb config
+- Prettier for code formatting
 
-- Backend: ESLint with Airbnb config
-- Frontend: ESLint with React config
-
-### Testing
-
+### Running Tests
 ```bash
-# Backend tests
-cd backend
+# Run all tests
 npm test
 
-# Frontend tests
-cd frontend
-npm test
+# Run tests with coverage
+npm run test:coverage
+
+# Run specific test file
+npm test -- path/to/test.js
 ```
 
-## Deployment
+### Database Management
 
-1. Build the frontend:
+```bash
+# Generate Prisma client
+npx prisma generate
+
+# Create new migration
+npx prisma migrate dev --name migration_name
+
+# Reset database
+npx prisma migrate reset
+
+# View database
+npx prisma studio
+```
+
+## Docker Support
+
+```bash
+# Build and start containers
+docker-compose up -d
+
+# Stop containers
+docker-compose down
+
+# View logs
+docker-compose logs -f
+```
+
+## Production Deployment
+
+1. **Build the application**
    ```bash
-   cd frontend
    npm run build
    ```
 
-2. Set up production environment variables:
+2. **Set production environment**
    ```bash
-   cd backend
    cp .env.example .env.production
    ```
 
-3. Start the production server:
+3. **Start production server**
    ```bash
    npm start
    ```
@@ -133,11 +179,11 @@ npm test
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 

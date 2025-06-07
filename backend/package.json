@@ -17,7 +17,18 @@
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "test": "jest",
-    "test:prisma": "node src/db/prisma/tests/prisma.test.js"
+    "test:prisma": "node src/db/prisma/tests/prisma.test.js",
+    
+    "docker:up": "docker-compose -f docker/dev/docker-compose.yml up",
+    "docker:down": "docker-compose -f docker/dev/docker-compose.yml down",
+    "docker:build": "docker-compose -f docker/dev/docker-compose.yml up --build",
+    "docker:logs": "docker-compose -f docker/dev/docker-compose.yml logs -f",
+    "docker:restart": "docker-compose -f docker/dev/docker-compose.yml restart",
+    "docker:ps": "docker-compose -f docker/dev/docker-compose.yml ps",
+    "docker:exec": "docker-compose -f docker/dev/docker-compose.yml exec app",
+    "docker:shell": "docker-compose -f docker/dev/docker-compose.yml exec app sh",
+    "docker:prisma": "docker-compose -f docker/dev/docker-compose.yml exec app npx prisma",
+    "docker:test": "docker-compose -f docker/dev/docker-compose.yml exec app npm test"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",
