@@ -1,9 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { PrismaClient } = require('@prisma/client');
 const { AuthError } = require('../utils/errors');
-
-const prisma = new PrismaClient();
+const prisma = require('../../../db/prisma');
 
 class JwtService {
   constructor() {
