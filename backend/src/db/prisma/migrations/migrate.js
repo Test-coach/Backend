@@ -1,40 +1,27 @@
-const { PrismaClient } = require('@prisma/client');
 const { execSync } = require('child_process');
 const path = require('path');
-
-const prisma = new PrismaClient();
+const prisma = require('../../prisma');
 
 async function runMigrations() {
   try {
-    console.log('Starting database migrations...');
-
     // Run Prisma migrations
-    execSync('npx prisma migrate deploy', {
-      stdio: 'inherit',
-      cwd: path.join(__dirname, '../../..')
-    });
-
-    // Seed the database if needed
-    if (process.env.SEED_DATABASE === 'true') {
-      console.log('Seeding database...');
-      execSync('npx prisma db seed', {
-        stdio: 'inherit',
-        cwd: path.join(__dirname, '../../..')
-      });
-    }
-
+    const prismaPath = path.join(__dirname, '../../../../node_modules/.bin/prisma');
+    execSync(`${prismaPath} migrate deploy`, { stdio: 'inherit' });
+    
     console.log('Migrations completed successfully');
   } catch (error) {
-    console.error('Migration failed:', error);
+    console.error('Error running migrations:', error);
     process.exit(1);
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
 // Run migrations if this file is executed directly
 if (require.main === module) {
-  runMigrations();
+  runMigrations()
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
 }
 
 module.exports = { runMigrations }; 

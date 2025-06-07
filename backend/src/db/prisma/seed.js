@@ -1,8 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 const { Decimal } = require('@prisma/client/runtime/library');
-
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 async function seed() {
   try {

@@ -1,8 +1,7 @@
 const { JwtService } = require('../services/jwt.service');
 const { AuthError } = require('../utils/errors');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../../../db/prisma');
 
-const prisma = new PrismaClient();
 const jwtService = new JwtService();
 
 const authenticateJWT = async (req, res, next) => {
