@@ -28,7 +28,8 @@ class JwtService {
 
       return token;
     } catch (error) {
-      throw new AuthError('Error generating token', 500);
+      const authError = new AuthError('Error generating token', 500);
+      throw authError;
     }
   }
 
@@ -47,21 +48,24 @@ class JwtService {
       });
 
       if (!session) {
-        throw new AuthError('Invalid or expired token', 401);
+        const authError = new AuthError('Invalid or expired token', 401);
+        throw authError;
       }
 
       return decoded;
     } catch (error) {
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new AuthError('Invalid token', 401);
+      if (error.name === 'TokenExpiredError') {
+        const authError = new AuthError('Invalid or expired token', 401);
+        throw authError;
       }
-      throw error;
+      const authError = new AuthError('Invalid token', 401);
+      throw authError;
     }
   }
 
   async hashPassword(password) {
-    const salt = await bcrypt.genSalt(10);
-    return bcrypt.hash(password, salt);
+    const saltRounds = parseInt(process.env.SALT_ROUNDS) || 10;
+    return bcrypt.hash(password, saltRounds);
   }
 
   async comparePassword(candidatePassword, hashedPassword) {
@@ -82,7 +86,8 @@ class JwtService {
     });
 
     if (!user) {
-      throw new AuthError('User not found', 404);
+      const authError = new AuthError('User not found', 404);
+      throw authError;
     }
 
     return user;

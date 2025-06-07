@@ -4,6 +4,15 @@ class AuthError extends Error {
     this.name = 'AuthError';
     this.statusCode = statusCode;
   }
+
+  sendResponse(res) {
+    return res.status(this.statusCode).json({
+      status: 'error',
+      message: this.message
+    });
+  }
 }
 
-module.exports = { AuthError }; 
+module.exports = {
+  AuthError
+}; 

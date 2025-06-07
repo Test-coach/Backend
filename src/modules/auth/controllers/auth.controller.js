@@ -1,6 +1,7 @@
 const { JwtService } = require('../services/jwt.service');
 const { AuthError } = require('../utils/errors');
 const prisma = require('../../../db/prisma');
+const SuccessResponse = require('../utils/success');
 
 class AuthController {
   constructor() {
@@ -22,10 +23,8 @@ class AuthController {
       });
 
       if (existingUser) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Email or username already exists'
-        });
+        const error = new AuthError('Email or username already exists', 400);
+        return error.sendResponse(res);
       }
 
       // Hash password
@@ -50,40 +49,33 @@ class AuthController {
 
       // Generate token
       const token = await this.jwtService.generateToken(user.id);
+      const sendDate = {email: user.email}
 
-      res.status(201).json({
-        message: 'User registered successfully',
-        user,
-        token
-      });
+      return new SuccessResponse('User registered successfully', { sendDate, token }).sendResponse(res);
     } catch (error) {
+      if (error instanceof AuthError) {
+        return error.sendResponse(res);
+      }
       next(error);
     }
   }
 
-  async login(req, res, next) {
+  async login(req, res) {
     try {
       const { email, password } = req.body;
 
-      // Find user
-      const user = await prisma.user.findUnique({
-        where: { email }
-      });
-
+      // Find user using jwtService
+      const user = await this.jwtService.findUserByEmail(email);
       if (!user) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Invalid credentials'
-        });
+        const error = new AuthError('Invalid credentials', 401);
+        return error.sendResponse(res);
       }
 
       // Verify password
       const isValidPassword = await this.jwtService.comparePassword(password, user.password_hash);
       if (!isValidPassword) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Invalid credentials'
-        });
+        const error = new AuthError('Invalid credentials', 401);
+        return error.sendResponse(res);
       }
 
       // Update last login
@@ -95,16 +87,12 @@ class AuthController {
       // Generate token
       const token = await this.jwtService.generateToken(user.id);
 
-      res.json({
-        message: 'Login successful',
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username
-        },
-        token
-      });
+      const sendData = { email: user.email, username: user.username };
+      return new SuccessResponse('Login successful', { sendData, token }).sendResponse(res);
     } catch (error) {
+      if (error instanceof AuthError) {
+        return error.sendResponse(res);
+      }
       next(error);
     }
   }
@@ -123,14 +111,15 @@ class AuthController {
       });
 
       if (!user) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'User not found'
-        });
+        const error = new AuthError('User not found', 404);
+        return error.sendResponse(res);
       }
 
-      res.json(user);
+      return new SuccessResponse('Profile retrieved successfully', { user }).sendResponse(res);
     } catch (error) {
+      if (error instanceof AuthError) {
+        return error.sendResponse(res);
+      }
       next(error);
     }
   }
@@ -158,11 +147,11 @@ class AuthController {
         }
       });
 
-      res.json({
-        message: 'Profile updated successfully',
-        profile
-      });
+      return new SuccessResponse('Profile updated successfully', { profile }).sendResponse(res);
     } catch (error) {
+      if (error instanceof AuthError) {
+        return error.sendResponse(res);
+      }
       next(error);
     }
   }
@@ -181,11 +170,11 @@ class AuthController {
         }
       });
 
-      res.json({
-        message: 'Preferences updated successfully',
-        preferences
-      });
+      return new SuccessResponse('Preferences updated successfully', { preferences }).sendResponse(res);
     } catch (error) {
+      if (error instanceof AuthError) {
+        return error.sendResponse(res);
+      }
       next(error);
     }
   }

@@ -8,6 +8,10 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+.env.development
+.env.test
+.env.production
+production.env
 
 # IDE
 .idea/
@@ -26,6 +30,7 @@ logs/
 # Build output
 dist/
 build/
+out/
 
 # Coverage directory
 coverage/
@@ -34,3 +39,11 @@ coverage/
 tmp/
 temp/ 
 /src/generated/prisma
+
+# Prisma
+prisma/*.db
+prisma/migrations/
+
+# Docker
+.docker/
+docker-compose.override.yml
