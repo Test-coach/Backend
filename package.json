@@ -10,7 +10,9 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "test:db": "psql -U dev -d myappdb -c 'SELECT NOW()'",
+    "test:postgres": "node src/db/postgres.test.js",
     "test:redis": "redis-cli ping",
+    "test:mongo": "node src/db/mongo.test.js",
     "seed": "node src/db/seed.js",
     "migrate": "node src/db/prisma/migrations/migrate.js",
     "migrate:dev": "prisma migrate dev",
@@ -23,7 +25,6 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:prisma": "node src/db/prisma/tests/prisma.test.js",
-    
     "docker:up": "docker-compose -f docker/dev/docker-compose.yml up",
     "docker:down": "docker-compose -f docker/dev/docker-compose.yml down",
     "docker:build": "docker-compose -f docker/dev/docker-compose.yml up --build",

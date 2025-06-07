@@ -15,6 +15,7 @@ const { redisConfig } = require('./config/database.config');
 const { serverConfig, rateLimitConfig } = require('./config/server.config');
 const { notFoundHandler } = require('./middleware/not-found.middleware');
 const { prisma, testConnection } = require('./db');
+const corsOptions = require('./config/cors.config');
 
 // Load environment variables
 dotenv.config();
@@ -29,7 +30,7 @@ const wss = new WebSocketServer({ server: httpServer });
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
