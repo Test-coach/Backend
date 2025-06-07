@@ -17,7 +17,7 @@ const { notFoundHandler } = require('./middleware/not-found.middleware');
 const { prisma, testConnection } = require('./db');
 
 // Load environment variables
-dotenv.config({ path: path.resolve('config/env/development.env') });
+dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);

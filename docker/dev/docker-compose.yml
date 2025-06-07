@@ -9,10 +9,21 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - DATABASE_URL=postgresql://dev:password@postgres:5432/myappdb
+      - API_PREFIX=/api/v1
+      - DATABASE_URL=postgresql://dev:password@postgres:5432/myappdb?schema=public
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - JWT_SECRET=your-super-secret-key
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - JWT_SECRET=your_jwt_super_secret_key_here
+      - JWT_EXPIRES_IN=24h
+      - SALT_ROUNDS=12
+      - MONGO_URI=mongodb://localhost:27017
+      - MONGO_DB=typing_analytics
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+      - LOG_LEVEL=debug
+      - LOG_FORMAT=dev
       - NODE_OPTIONS=--inspect=0.0.0.0:9229
     ports:
       - "3000:3000"

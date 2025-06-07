@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "node --watch src/app.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
     "test:db": "psql -U dev -d myappdb -c 'SELECT NOW()'",
     "test:redis": "redis-cli ping",
     "seed": "node src/db/seed.js",
@@ -17,6 +20,8 @@
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "test:prisma": "node src/db/prisma/tests/prisma.test.js",
     
     "docker:up": "docker-compose -f docker/dev/docker-compose.yml up",
