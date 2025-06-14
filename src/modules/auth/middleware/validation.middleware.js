@@ -38,12 +38,26 @@ const validateRegistration = [
 // Login validation rules
 const validateLogin = [
   body('email')
+    .optional()
     .isEmail()
     .normalizeEmail()
     .withMessage('Please provide a valid email address'),
+  body('username')
+    .optional()
+    .isLength({ min: 3 })
+    .withMessage('Username must be at least 3 characters long')
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('Username can only contain letters, numbers, and underscores'),
   body('password')
     .exists()
     .withMessage('Password is required'),
+  body()
+    .custom((value, { req }) => {
+      if (!req.body.email && !req.body.username) {
+        throw new Error('Either email or username is required');
+      }
+      return true;
+    }),
   validateRequest
 ];
 

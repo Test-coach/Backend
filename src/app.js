@@ -17,7 +17,6 @@ const corsOptions = require('./config/cors.config');
 const features = require('./config/features.config');
 const cacheService = require('./services/cache.service');
 
-// Load environment variables
 dotenv.config();
 
 const app = express();

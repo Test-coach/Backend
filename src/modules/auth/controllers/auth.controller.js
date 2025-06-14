@@ -62,10 +62,16 @@ class AuthController {
 
   async login(req, res) {
     try {
-      const { email, password } = req.body;
+      const { email, username, password } = req.body;
+      const identifier = email || username;
+
+      if (!identifier) {
+        const error = new AuthError('Email or username is required', 400);
+        return error.sendResponse(res);
+      }
 
       // Find user using jwtService
-      const user = await this.jwtService.findUserByEmail(email);
+      const user = await this.jwtService.findUserByCredentials(identifier);
       if (!user) {
         const error = new AuthError('Invalid credentials', 401);
         return error.sendResponse(res);

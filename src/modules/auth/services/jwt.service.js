@@ -93,9 +93,14 @@ class JwtService {
     return user;
   }
 
-  async findUserByEmail(email) {
-    return prisma.user.findUnique({
-      where: { email },
+  async findUserByCredentials(identifier) {
+    return prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { username: identifier }
+        ]
+      },
       select: {
         id: true,
         email: true,
