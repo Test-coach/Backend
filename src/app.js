@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const { authRoutes, authenticateJWT } = require('./modules/auth');
+const { adminRoutes } = require('./modules/admin');
 const { requestLogger } = require('./middleware/logger.middleware');
 const { errorHandler } = require('./middleware/error.middleware');
 const { redisConfig } = require('./config/database.config');
@@ -119,6 +120,7 @@ app.get('/protected', authenticateJWT, (req, res) => {
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/admin', adminRoutes);
 
 // Error handling
 app.use(notFoundHandler);

@@ -12,7 +12,6 @@ class AuthController {
     try {
       const { email, username, password } = req.body;
 
-      // Check if user already exists
       const existingUser = await prisma.user.findFirst({
         where: {
           OR: [
@@ -27,10 +26,8 @@ class AuthController {
         return error.sendResponse(res);
       }
 
-      // Hash password
       const hashedPassword = await this.jwtService.hashPassword(password);
 
-      // Create user with default preferences
       const user = await prisma.user.create({
         data: {
           email,
@@ -47,7 +44,6 @@ class AuthController {
         }
       });
 
-      // Generate token
       const token = await this.jwtService.generateToken(user.id);
       const sendDate = {email: user.email}
 
@@ -70,27 +66,23 @@ class AuthController {
         return error.sendResponse(res);
       }
 
-      // Find user using jwtService
       const user = await this.jwtService.findUserByCredentials(identifier);
       if (!user) {
         const error = new AuthError('Invalid credentials', 401);
         return error.sendResponse(res);
       }
 
-      // Verify password
       const isValidPassword = await this.jwtService.comparePassword(password, user.password_hash);
       if (!isValidPassword) {
         const error = new AuthError('Invalid credentials', 401);
         return error.sendResponse(res);
       }
 
-      // Update last login
       await prisma.user.update({
         where: { id: user.id },
         data: { last_login: new Date() }
       });
 
-      // Generate token
       const token = await this.jwtService.generateToken(user.id);
 
       const sendData = { email: user.email, username: user.username };
