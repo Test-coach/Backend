@@ -263,6 +263,31 @@ async function seed() {
       })
     ]);
 
+    // Create a sample govtExam with a test
+    const exam = await prisma.govtExam.create({
+      data: {
+        name: 'Sample Govt Exam',
+        slug: 'sample-govt-exam',
+        examType: 'OTHER',
+        description: 'A seeded government exam.',
+        price: new Decimal(100),
+        discountPrice: new Decimal(80),
+        language: 'en',
+        validityMonths: 6,
+        coverImageUrl: 'http://example.com/cover.jpg',
+        tests: {
+          create: [
+            {
+              name: 'Seeded Test 1',
+              slug: 'seeded-test-1',
+              durationMinutes: 60,
+              isActive: true
+            }
+          ]
+        }
+      }
+    });
+
     // Create sample orders
     const orders = await Promise.all([
       prisma.order.upsert({
@@ -282,6 +307,7 @@ async function seed() {
           payment_method: 'credit_card',
           payment_status: 'pending',
           currency: 'INR',
+          govtExam: { connect: { id: exam.id } },
           metadata: {
             items: [
               {
@@ -313,6 +339,7 @@ async function seed() {
           payment_status: 'pending',
           currency: 'INR',
           order_number: 'ORD-001',
+          govtExam: { connect: { id: exam.id } },
           metadata: {
             items: [
               {
@@ -348,6 +375,7 @@ async function seed() {
           payment_method: 'credit_card',
           payment_status: 'paid',
           currency: 'INR',
+          govtExam: { connect: { id: exam.id } },
           metadata: {
             items: [
               {
@@ -379,6 +407,7 @@ async function seed() {
           payment_status: 'paid',
           currency: 'INR',
           order_number: 'ORD-002',
+          govtExam: { connect: { id: exam.id } },
           metadata: {
             items: [
               {

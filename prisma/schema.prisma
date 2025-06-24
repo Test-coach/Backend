@@ -142,6 +142,8 @@ model Order {
   updated_at                 DateTime  @updatedAt
   coupon                     Coupon?   @relation(fields: [coupon_id], references: [id])
   user                       User?     @relation(fields: [user_id], references: [id])
+  govtExamId                 Int?
+  govtExam                   govtExam?   @relation(fields: [govtExamId], references: [id])
 
   @@index([user_id, course_id])
   @@index([created_at])
@@ -160,4 +162,60 @@ model CouponUsage {
   @@unique([coupon_id, user_id])
   @@index([coupon_id])
   @@index([user_id])
+}
+
+enum ExamType {
+  JUDICIARY
+  TEACHER
+  SSC
+  CGL
+  BANKING
+  RAILWAY
+  DEFENSE
+  OTHER
+}
+
+model govtExam {
+  id              Int       @id @default(autoincrement())
+  examType        ExamType
+  name            String
+  slug            String    @unique
+  description     String?
+  price           Decimal
+  discountPrice   Decimal?
+  isActive        Boolean   @default(true)
+  coverImageUrl   String?
+  language        String    @default("en")
+  validityMonths  Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  tests           Test[]
+  orders          Order[]
+
+  @@index([examType])
+  @@index([slug])
+  @@index([isActive])
+}
+
+model Test {
+  id              Int       @id @default(autoincrement())
+  examId          Int
+  name            String
+  slug            String    @unique
+  description     String?
+  durationMinutes Int
+  language        String    @default("en")
+  questionCount   Int       @default(0)
+  maxAttempts     Int?
+  isFree          Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  instructions    String?
+  passingScore    Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  exam            govtExam  @relation(fields: [examId], references: [id])
+
+  @@index([examId])
+  @@index([slug])
+  @@index([isActive])
 }
