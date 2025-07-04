@@ -1,0 +1,292 @@
+openapi: 3.0.0
+info:
+  title: Admin Exam API
+  version: 1.0.0
+  description: API for managing exams and tests (admin endpoints)
+servers:
+  - url: https://{host}:{port}
+    variables:
+      host:
+        default: localhost
+        description: The API host
+      port:
+        default: '3000'
+        description: The port number
+paths:
+  /admin/exams:
+    post:
+      summary: Create a new exam
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - examType
+                - price
+              properties:
+                name:
+                  type: string
+                  example: Math Exam
+                slug:
+                  type: string
+                  example: math-exam
+                examType:
+                  type: string
+                  example: final
+                description:
+                  type: string
+                  example: Final math exam for grade 10
+                price:
+                  type: number
+                  example: 100
+                discountPrice:
+                  type: number
+                  example: 80
+                language:
+                  type: string
+                  example: en
+                validityMonths:
+                  type: integer
+                  example: 12
+                coverImageUrl:
+                  type: string
+                  example: https://example.com/image.png
+                tests:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: Algebra Test
+                      slug:
+                        type: string
+                        example: algebra-test
+                      durationMinutes:
+                        type: integer
+                        example: 60
+      responses:
+        '201':
+          description: Exam created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessExamResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: Get all exam names
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of exam names
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: All exams data fetched successfully
+                  data:
+                    type: object
+                    properties:
+                      allExams:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Exam'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/tests:
+    post:
+      summary: Create a new test
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - examId
+                - name
+                - durationMinutes
+              properties:
+                examId:
+                  type: string
+                  example: 123e4567-e89b-12d3-a456-426614174000
+                name:
+                  type: string
+                  example: Algebra Test
+                slug:
+                  type: string
+                  example: algebra-test
+                description:
+                  type: string
+                  example: Test on algebra topics
+                durationMinutes:
+                  type: integer
+                  example: 60
+                language:
+                  type: string
+                  example: en
+                instructions:
+                  type: string
+                  example: Read all questions carefully.
+      responses:
+        '201':
+          description: Test created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessTestResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Exam:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 123e4567-e89b-12d3-a456-426614174000
+        name:
+          type: string
+          example: Math Exam
+        slug:
+          type: string
+          example: math-exam
+        examType:
+          type: string
+          example: final
+        description:
+          type: string
+          example: Final math exam for grade 10
+        price:
+          type: number
+          example: 100
+        discountPrice:
+          type: number
+          example: 80
+        language:
+          type: string
+          example: en
+        validityMonths:
+          type: integer
+          example: 12
+        coverImageUrl:
+          type: string
+          example: https://example.com/image.png
+        tests:
+          type: array
+          items:
+            $ref: '#/components/schemas/Test'
+    Test:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 456e7890-e12b-34d5-c678-526614174111
+        examId:
+          type: string
+          example: 123e4567-e89b-12d3-a456-426614174000
+        name:
+          type: string
+          example: Algebra Test
+        slug:
+          type: string
+          example: algebra-test
+        description:
+          type: string
+          example: Test on algebra topics
+        durationMinutes:
+          type: integer
+          example: 60
+        language:
+          type: string
+          example: en
+        instructions:
+          type: string
+          example: Read all questions carefully.
+    SuccessExamResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Exam created successfully
+        data:
+          type: object
+          properties:
+            exam:
+              $ref: '#/components/schemas/Exam'
+    SuccessTestResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Test created successfully
+        data:
+          type: object
+          properties:
+            test:
+              $ref: '#/components/schemas/Test'
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Missing required fields: name. 

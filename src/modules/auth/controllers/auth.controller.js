@@ -1,7 +1,7 @@
 const { JwtService } = require('../services/jwt.service');
-const { AuthError } = require('../utils/errors');
+const { AuthError } = require('../../shared/utils/error');
 const prisma = require('../../../db/prisma');
-const SuccessResponse = require('../utils/success');
+const SuccessResponse = require('../../shared/utils/success');
 
 class AuthController {
   constructor() {

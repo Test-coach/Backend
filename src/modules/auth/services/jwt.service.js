@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { AuthError } = require('../utils/errors');
+const { AuthError } = require('../../shared/utils/error');
 const prisma = require('../../../db/prisma');
 
 class JwtService {

@@ -1,7 +1,7 @@
 const prisma = require('../../../db/prisma');
 const { JwtService } = require('../services/admin.jwt.service');
-const { AuthError } = require('../utils/error');
-const SuccessResponse = require('../utils/success');
+const { AuthError } = require('../../shared/utils/error');
+const SuccessResponse = require('../../shared/utils/success');
 
 class AdminAuthController {
     constructor() {

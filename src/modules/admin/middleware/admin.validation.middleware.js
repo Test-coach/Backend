@@ -1,5 +1,7 @@
 const { body, validationResult } = require('express-validator');
 const { ValidationError } = require('../../../core/errors');
+const { adminLoginSchema } = require('../schema/admin.auth.schema');
+const { AuthError } = require('../../shared/utils/error');
 
 // Validation result handler
 const validateRequest = (req, res, next) => {
@@ -61,8 +63,17 @@ const validateLogin = [
   validateRequest
 ];
 
+function validateAdminLogin(req, res, next) {
+  const { error } = adminLoginSchema.validate(req.body);
+  if (error) {
+    return new AuthError(error.details[0].message, 400).sendResponse(res);
+  }
+  next();
+}
+
 module.exports = {
   validateRequest,
   validateRegistration,
-  validateLogin
+  validateLogin,
+  validateAdminLogin
 }; 

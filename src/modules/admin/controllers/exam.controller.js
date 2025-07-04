@@ -1,6 +1,6 @@
 const prisma = require('../../../db/prisma');
-const { AuthError } = require('../utils/error');
-const SuccessResponse = require('../utils/success');
+const { AuthError } = require('../../shared/utils/error');
+const SuccessResponse = require('../../shared/utils/success');
 
 class ExamController {
   async createExam(req, res, next) {
@@ -17,17 +17,6 @@ class ExamController {
         tests = [],
         coverImageUrl
       } = req.body;
-
-      function slugify(str) {
-        return str
-          .toString()
-          .toLowerCase()
-          .trim()
-          .replace(/\s+/g, '-')
-          .replace(/[^a-z0-9\-]/g, '')
-          .replace(/-+/g, '-')
-          .replace(/^-+|-+$/g, '');
-      }
 
       if (!name ) {
         const error = new AuthError('Missing required fields: name.', 400);
@@ -81,6 +70,92 @@ class ExamController {
       next(error);
     }
   }
+
+  async createTest(req,res,next){
+    try {
+      let {
+        examId, 
+        name, 
+        slug, 
+        description, 
+        durationMinutes,
+        language,
+        instructions,
+      } = req.body;
+
+      if(!name){
+        const error = new AuthError('Missing required fields: test name.', 400);
+        return error.sendResponse(res);
+      }
+
+      if(!examId){
+        const error = new AuthError('A examId is compulsary.', 400);
+        return error.sendResponse(res);
+      }
+
+      if(!durationMinutes){
+        const error = new AuthError('Missing required fields: durationMinutes', 400);
+        return error.sendResponse(res);
+      }
+
+      if(!slug){
+        slug = slugify(name);
+      }
+
+      const test = await prisma.test.create({
+        data: {
+          examId, 
+          name, 
+          slug, 
+          description, 
+          durationMinutes,
+          language,
+          instructions
+        }
+      });
+
+      return new SuccessResponse('Test created successfully', { test }, 201).sendResponse(res);
+
+    } catch (error) {
+      if(error instanceof AuthError){
+        return error.sendResponse(res);
+      }
+      next(error);
+    }
+  }
+
+  async getAllExamName(req,res,next){
+    try {
+      const allExams = await prisma.govtExam.findMany({
+        select: {
+          examType: true,
+          name: true,
+          description: true,
+          isActive: true,
+          price: true,
+          validityMonths:true
+        }
+      });
+
+      return new SuccessResponse('All exams data fetched successfully', {allExams}, 201).sendResponse(res);
+    } catch (error) {
+      if(error instanceof AuthError){
+        return error.sendResponse(res);
+      }
+      next(error);
+    }
+  }
+}
+
+function slugify(str) {
+  return str
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 module.exports = new ExamController(); 

@@ -17,6 +17,10 @@ const { prisma, testConnection } = require('./db');
 const corsOptions = require('./config/cors.config');
 const features = require('./config/features.config');
 const cacheService = require('./services/cache.service');
+const yaml = require('yamljs');
+const swaggerUi = require('swagger-ui-express');
+const { AuthError } = require('./modules/shared/utils/error');
+const SuccessResponse = require('./modules/shared/utils/success');
 
 dotenv.config();
 
@@ -71,15 +75,18 @@ app.use(limiter);
 
 app.use(requestLogger);
 
+const swaggerDocument = yaml.load(path.join(__dirname, '../openapi.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 app.get('/health', (req, res) => {
-  res.json({
+  return new SuccessResponse('Health check successful', {
     status: 'OK',
     db: 'PostgreSQL',
     cache: features.redis.enabled ? 'Redis' : 'In-Memory',
     websocket: features.websocket.enabled ? 'Enabled' : 'Disabled',
     timestamp: new Date().toISOString(),
     environment: serverConfig.env
-  });
+  }).sendResponse(res);
 });
 
 // Example of using cache
@@ -102,20 +109,20 @@ app.get('/cache-test', (req, res) => {
     }
   }
   
-  res.json(value);
+  return new SuccessResponse('Cache test successful', value).sendResponse(res);
 });
 
 app.get('/test-db', async (req, res) => {
   try {
     const result = await prisma.$queryRaw`SELECT NOW() as time, current_database() as db`;
-    res.json(result[0]);
+    return new SuccessResponse('Database test successful', result[0]).sendResponse(res);
   } catch (err) {
-    res.status(500).json({ error: 'Database error' });
+    return new AuthError('Database error', 500).sendResponse(res);
   }
 });
 
 app.get('/protected', authenticateJWT, (req, res) => {
-  res.json({ message: 'This is a protected route', user: req.user });
+  return new SuccessResponse('Protected route accessed', { user: req.user }).sendResponse(res);
 });
 
 // Routes
