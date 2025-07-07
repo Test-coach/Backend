@@ -92,14 +92,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
     get:
-      summary: Get all exam names
+      summary: Get all exams (courses) with their tests
       tags:
         - Admin
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: List of exam names
+          description: List of all exams (courses)
           content:
             application/json:
               schema:
@@ -110,7 +110,41 @@ paths:
                     example: success
                   message:
                     type: string
-                    example: All exams data fetched successfully
+                    example: All exams fetched successfully
+                  data:
+                    type: object
+                    properties:
+                      exams:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Exam'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/courses:
+    get:
+      summary: Get all courses (exams) names
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of all course names
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: All courses data fetched successfully
                   data:
                     type: object
                     properties:
@@ -118,6 +152,84 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Exam'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/course:
+    post:
+      summary: Create a new course (exam)
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - examType
+                - price
+              properties:
+                name:
+                  type: string
+                  example: Math Exam
+                slug:
+                  type: string
+                  example: math-exam
+                examType:
+                  type: string
+                  example: JUDICIARY
+                description:
+                  type: string
+                  example: Final math exam for grade 10
+                price:
+                  type: number
+                  example: 100
+                discountPrice:
+                  type: number
+                  example: 80
+                language:
+                  type: string
+                  example: en
+                validityMonths:
+                  type: integer
+                  example: 12
+                coverImageUrl:
+                  type: string
+                  example: https://example.com/image.png
+                tests:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: Algebra Test
+                      slug:
+                        type: string
+                        example: algebra-test
+                      durationMinutes:
+                        type: integer
+                        example: 60
+      responses:
+        '201':
+          description: Course created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessExamResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           description: Unauthorized
           content:
@@ -143,8 +255,8 @@ paths:
                 - durationMinutes
               properties:
                 examId:
-                  type: string
-                  example: 123e4567-e89b-12d3-a456-426614174000
+                  type: integer
+                  example: 1
                 name:
                   type: string
                   example: Algebra Test
@@ -178,6 +290,59 @@ paths:
                 $ref: '#/components/schemas/Error'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/course/{courseName}/tests:
+    get:
+      summary: Get all tests under a course by course name
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: courseName
+          required: true
+          schema:
+            type: string
+          description: The name of the course (govtExam)
+      responses:
+        '200':
+          description: List of tests for the course
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Tests fetched successfully
+                  data:
+                    type: object
+                    properties:
+                      tests:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Test'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Course not found
           content:
             application/json:
               schema:

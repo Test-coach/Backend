@@ -3,7 +3,7 @@ const { AuthError } = require('../../shared/utils/error');
 const SuccessResponse = require('../../shared/utils/success');
 
 class ExamController {
-  async createExam(req, res, next) {
+  async createCourse(req, res, next) {
     try {
       const {
         name,
@@ -36,7 +36,13 @@ class ExamController {
         return error.sendResponse(res);
       }
 
-      // Debug log: print the data object sent to Prisma
+      // Check if an exam with the same slug already exists
+      const existingExam = await prisma.govtExam.findUnique({ where: { slug: finalSlug } });
+      if (existingExam) {
+        const error = new AuthError('An exam with this slug already exists.', 409);
+        return error.sendResponse(res);
+      }
+
       const dataForPrisma = {
         name,
         slug: finalSlug,
@@ -66,6 +72,11 @@ class ExamController {
     } catch (error) {
       if (error instanceof AuthError) {
         return error.sendResponse(res);
+      }
+      // Handle unique constraint error from Prisma
+      if (error.code === 'P2002' && error.meta && error.meta.target && error.meta.target.includes('slug')) {
+        const err = new AuthError('An exam with this slug already exists.', 409);
+        return err.sendResponse(res);
       }
       next(error);
     }
@@ -124,7 +135,7 @@ class ExamController {
     }
   }
 
-  async getAllExamName(req,res,next){
+  async getAllCourses(req,res,next){
     try {
       const allExams = await prisma.govtExam.findMany({
         select: {
@@ -142,6 +153,36 @@ class ExamController {
       if(error instanceof AuthError){
         return error.sendResponse(res);
       }
+      next(error);
+    }
+  }
+
+  async getAllExams(req, res, next) {
+    try {
+      const exams = await prisma.govtExam.findMany({
+        include: { tests: true }
+      });
+      return new SuccessResponse('All exams fetched successfully', { exams }, 200).sendResponse(res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getTestsByCourseName(req, res, next) {
+    try {
+      const { courseName } = req.params;
+      if (!courseName) {
+        return new AuthError('Course name is required.', 400).sendResponse(res);
+      }
+      const course = await prisma.govtExam.findUnique({
+        where: { name: courseName },
+        include: { tests: true }
+      });
+      if (!course) {
+        return new AuthError('Course not found.', 404).sendResponse(res);
+      }
+      return new SuccessResponse('Tests fetched successfully', { tests: course.tests }, 200).sendResponse(res);
+    } catch (error) {
       next(error);
     }
   }
