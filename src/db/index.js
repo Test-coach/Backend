@@ -1,6 +1,5 @@
 const prisma = require('./prisma');
 const { ensureMigrations } = require('./ensureMigrations');
-const { resetAndMigrate } = require('./resetAndMigrate');
 
 // Test database connection
 async function testConnection() {
@@ -14,10 +13,9 @@ async function testConnection() {
   }
 }
 
-// Export Prisma client, connection test, ensureMigrations, and resetAndMigrate
+// Export Prisma client, connection test, and ensureMigrations
 module.exports = {
   prisma,
   testConnection,
-  ensureMigrations,
-  resetAndMigrate
+  ensureMigrations
 }; 
