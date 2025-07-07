@@ -13,7 +13,7 @@ const { errorHandler } = require('./middleware/error.middleware');
 const { redisConfig } = require('./config/database.config');
 const { serverConfig, rateLimitConfig } = require('./config/server.config');
 const { notFoundHandler } = require('./middleware/not-found.middleware');
-const { prisma, testConnection } = require('./db');
+const { prisma, testConnection, ensureMigrations } = require('./db');
 const corsOptions = require('./config/cors.config');
 const features = require('./config/features.config');
 const cacheService = require('./services/cache.service');
@@ -171,6 +171,9 @@ process.on('SIGINT', gracefulShutdown);
 // Database connection and server start
 async function startServer() {
   try {
+    // Ensure migrations and required tables
+    await ensureMigrations();
+
     // Test database connection
     const isConnected = await testConnection();
     if (!isConnected) {
