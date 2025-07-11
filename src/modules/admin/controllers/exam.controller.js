@@ -164,6 +164,9 @@ class ExamController {
       });
       return new SuccessResponse('All exams fetched successfully', { exams }, 200).sendResponse(res);
     } catch (error) {
+      if(error instanceof AuthError){
+        return error.sendResponse(res);
+      }
       next(error);
     }
   }
@@ -183,6 +186,149 @@ class ExamController {
       }
       return new SuccessResponse('Tests fetched successfully', { tests: course.tests }, 200).sendResponse(res);
     } catch (error) {
+      if(error instanceof AuthError){
+        return error.sendResponse(res);
+      }
+      next(error);
+    }
+  }
+
+  async updateCourseDeleteTest(req, res, next) {
+    try {
+      const { courseName, testName } = req.body;
+    
+      if (!courseName) {
+        return new AuthError('Course name is required.', 400).sendResponse(res);
+      }
+
+      if (!testName) {
+        return new AuthError('Test name is required.', 400).sendResponse(res);
+      }
+      
+      const testToRemove = await prisma.test.findFirst({
+        where: {
+          name: testName,
+          exam: {
+            name: courseName
+          }
+        }
+      });
+
+      if(!testToRemove){
+        return new AuthError('Test not found in this course.', 404).sendResponse(res);
+      }
+       await prisma.test.delete({
+        where: { id: testToRemove.id }
+      });
+
+      const updatedCourse = await prisma.govtExam.findUnique({
+        where: { name: courseName },
+        include: { tests: true }
+      });
+
+      return new SuccessResponse('Test removed successfully', { 
+        course: updatedCourse,
+        removedTest: testName 
+      }, 200).sendResponse(res);
+
+    } catch (error) {
+      if(error instanceof AuthError){
+        return error.sendResponse(res);
+      }
+      next(error);
+    }
+  }
+
+  async setTestActiveStatus(req, res, next) {
+    try {
+      const { courseName, testName, active } = req.body;
+
+      if (!courseName) {
+        return new AuthError('Course name is required.', 400).sendResponse(res);
+      }
+      if (!testName) {
+        return new AuthError('Test name is required.', 400).sendResponse(res);
+      }
+      if (typeof active !== 'boolean') {
+        return new AuthError('Active field must be true or false.', 400).sendResponse(res);
+      }
+
+      const testToUpdate = await prisma.test.findFirst({
+        where: {
+          name: testName,
+          exam: {
+            name: courseName
+          }
+        }
+      });
+
+      if (!testToUpdate) {
+        return new AuthError('Test not found in this course.', 404).sendResponse(res);
+      }
+
+      await prisma.test.update({
+        where: { id: testToUpdate.id },
+        data: { isActive: active }
+      });
+
+      const updatedTest = await prisma.test.findUnique({
+        where: { id: testToUpdate.id }
+      });
+
+      return new SuccessResponse(
+        `Test ${active ? 'activated' : 'deactivated'} successfully`,
+        { test: updatedTest },
+        200
+      ).sendResponse(res);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return error.sendResponse(res);
+      }
+      next(error);
+    }
+  }
+
+  async updateTestByName(req, res, next) {
+    try {
+      const { testName, courseName, ...updateFields } = req.body;
+  
+      if (!testName) {
+        return new AuthError('Test name is required.', 400).sendResponse(res);
+      }
+  
+      let testToUpdate;
+      if (courseName) {
+        testToUpdate = await prisma.test.findFirst({
+          where: {
+            name: testName,
+            exam: { name: courseName }
+          }
+        });
+      } else {
+        testToUpdate = await prisma.test.findFirst({
+          where: { name: testName }
+        });
+      }
+  
+      if (!testToUpdate) {
+        return new AuthError('Test not found.', 404).sendResponse(res);
+      }
+  
+      // Remove testName and courseName from updateFields if present
+      delete updateFields.testName;
+      delete updateFields.courseName;
+  
+      // Update the test with the provided fields
+      const updatedTest = await prisma.test.update({
+        where: { id: testToUpdate.id },
+        data: updateFields
+      });
+  
+      return new SuccessResponse('Test updated successfully', { test: updatedTest }, 200).sendResponse(res);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return error.sendResponse(res);
+      }
       next(error);
     }
   }

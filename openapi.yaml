@@ -347,6 +347,174 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /admin/delete-test:
+    post:
+      summary: Delete a test from a course
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - courseName
+                - testName
+              properties:
+                courseName:
+                  type: string
+                  example: Math Exam
+                testName:
+                  type: string
+                  example: Algebra Test
+      responses:
+        '200':
+          description: Test deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Test deleted successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/test/change-status:
+    put:
+      summary: Change the active status of a test
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - testId
+                - isActive
+              properties:
+                testId:
+                  type: string
+                  example: 456e7890-e12b-34d5-c678-526614174111
+                isActive:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Test status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Test status updated
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/update-test:
+    put:
+      summary: Update a test by name
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - courseName
+                - testName
+                - updates
+              properties:
+                courseName:
+                  type: string
+                  example: Math Exam
+                testName:
+                  type: string
+                  example: Algebra Test
+                updates:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: New Test Name
+                    durationMinutes:
+                      type: integer
+                      example: 90
+                    description:
+                      type: string
+                      example: Updated description
+                    isActive:
+                      type: boolean
+                      example: true
+      responses:
+        '200':
+          description: Test updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Test updated successfully
+                  data:
+                    type: object
+                    properties:
+                      test:
+                        $ref: '#/components/schemas/Test'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   securitySchemes:
     bearerAuth:
