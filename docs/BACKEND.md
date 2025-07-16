@@ -1,5 +1,9 @@
 # Backend Documentation
 
+## Project Summary
+
+This backend powers an advanced admin exam management system, enabling secure and efficient creation, updating, and management of courses and tests. Built with Node.js, Express, and MongoDB/PostgreSQL, it features robust RESTful APIs and integrates interactive Swagger (OpenAPI) documentation for seamless API testing and rapid developer onboarding. The architecture emphasizes high performance, security, and maintainability, ensuring a scalable and developer-friendly platform.
+
 ## Project Structure
 ```
 backend/

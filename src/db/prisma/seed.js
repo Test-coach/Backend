@@ -204,7 +204,7 @@ async function seed() {
     }
 
     // Create sample coupons
-    const coupons = await Promise.all([
+    const [welcomeCoupon, flatCoupon] = await Promise.all([
       prisma.coupon.upsert({
         where: {
           code: 'WELCOME10'
@@ -263,30 +263,46 @@ async function seed() {
       })
     ]);
 
-    // Create a sample govtExam with a test
-    const exam = await prisma.govtExam.create({
-      data: {
-        name: 'Sample Govt Exam',
-        slug: 'sample-govt-exam',
-        examType: 'OTHER',
-        description: 'A seeded government exam.',
-        price: new Decimal(100),
-        discountPrice: new Decimal(80),
-        language: 'en',
-        validityMonths: 6,
-        coverImageUrl: 'http://example.com/cover.jpg',
-        tests: {
-          create: [
-            {
-              name: 'Seeded Test 1',
-              slug: 'seeded-test-1',
-              durationMinutes: 60,
-              isActive: true
-            }
-          ]
+    // Ensure sample course exists
+    let exam = await prisma.govtExam.findUnique({ where: { slug: 'sample-govt-exam' } });
+    if (!exam) {
+      exam = await prisma.govtExam.create({
+        data: {
+          name: 'Sample Govt Exam',
+          slug: 'sample-govt-exam',
+          examType: 'OTHER',
+          description: 'A seeded government exam.',
+          price: new Decimal(100),
+          discountPrice: new Decimal(80),
+          language: 'en',
+          validityMonths: 6,
+          coverImageUrl: 'http://example.com/cover.jpg',
+          tests: {
+            create: [
+              {
+                name: 'Seeded Test 1',
+                slug: 'seeded-test-1',
+                durationMinutes: 60,
+                isActive: true
+              }
+            ]
+          }
         }
-      }
+      });
+    }
+
+    // Only create CourseCoupon join if it does not exist
+    const existingJoin = await prisma.courseCoupon.findFirst({
+      where: { couponId: flatCoupon.id, courseId: exam.id }
     });
+    if (!existingJoin) {
+      await prisma.courseCoupon.create({
+        data: {
+          couponId: flatCoupon.id,
+          courseId: exam.id
+        }
+      });
+    }
 
     // Create sample orders
     const orders = await Promise.all([

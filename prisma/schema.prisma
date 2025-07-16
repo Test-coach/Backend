@@ -107,6 +107,7 @@ model Coupon {
   updated_at        DateTime      @updatedAt
   couponUsages      CouponUsage[]
   orders            Order[]
+  courses           CourseCoupon[]
 
   @@index([code])
   @@index([is_active])
@@ -191,6 +192,7 @@ model govtExam {
   updatedAt       DateTime  @updatedAt
   tests           Test[]
   orders          Order[]
+  coupons         CourseCoupon[]
 
   @@index([examType])
   @@index([slug])
@@ -218,4 +220,14 @@ model Test {
   @@index([examId])
   @@index([slug])
   @@index([isActive])
+}
+
+model CourseCoupon {
+  id        Int      @id @default(autoincrement())
+  coupon    Coupon   @relation(fields: [couponId], references: [id])
+  couponId  Int
+  course    govtExam @relation(fields: [courseId], references: [id])
+  courseId  Int
+
+  @@unique([couponId, courseId])
 }
