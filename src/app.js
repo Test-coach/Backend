@@ -171,7 +171,7 @@ process.on('SIGINT', gracefulShutdown);
 // Database connection and server start
 async function startServer() {
   try {
-    await ensureMigrations();
+    ensureMigrations();
 
     // Test database connection
     const isConnected = await testConnection();
